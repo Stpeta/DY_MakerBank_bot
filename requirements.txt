@@ -1,0 +1,7 @@
+aiogram>=3.0.0b8
+environs
+SQLAlchemy>=1.4
+aiosqlite
+gspread>=5.0.0
+google-auth>=2.0.0
+oauth2client>=4.1.3
