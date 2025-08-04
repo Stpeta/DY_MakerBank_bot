@@ -12,9 +12,11 @@ class Course(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
-    sheet_url = Column(String, nullable=True)        # ← новое поле
+    sheet_url = Column(String, nullable=True)
     creator_id = Column(BigInteger, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    finish_date = Column(DateTime, nullable=True)
 
     participants = relationship("Participant", back_populates="course")
 

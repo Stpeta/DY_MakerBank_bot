@@ -1,6 +1,6 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
-from services.registration import get_user_role
+from services.role_service import get_user_role
 
 class RoleFilter(BaseFilter):
     def __init__(self, role: str):
