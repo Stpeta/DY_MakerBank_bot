@@ -1,43 +1,59 @@
-# handlers/guest.py
-
 from aiogram import Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from database.crud import get_participant_by_telegram_id
 from filters.role_filter import RoleFilter
-from states.fsm import Registration
-from services.participant_registration import register_by_code
+from keyboards.participant import main_menu_participant_kb
 from lexicon.lexicon_en import LEXICON
+from services.participant_registration import register_by_code
+from states.fsm import Registration
 
+# Router for guest users
 guest_router = Router()
 guest_router.message.filter(RoleFilter("guest"))
 
 
 @guest_router.message(Command("start"))
-async def cmd_start(message: Message):
-    await message.answer(LEXICON["registration_welcome"])
-
-
-@guest_router.message(Command("register"))
-async def cmd_register(message: Message, state: FSMContext):
+async def cmd_start(message: Message, state: FSMContext):
+    """Prompt guest to enter registration code at start."""
     await message.answer(LEXICON["registration_code_request"])
     await state.set_state(Registration.waiting_for_code)
 
 
 @guest_router.message(StateFilter(Registration.waiting_for_code))
 async def process_registration_code(message: Message, state: FSMContext):
+    """Process entered code, register participant."""
     code = message.text.strip().upper()
-    part, status = await register_by_code(code, message.from_user.id)
 
-    if status == "not_found":
-        await message.answer(LEXICON["registration_not_found"])
-        return
-    if status == "already":
-        await message.answer(LEXICON["registration_already"].format(name=part.name))
+    try:
+        part, status = await register_by_code(code, message.from_user.id)
+    except Exception as e:
+        print(f"[REGISTRATION ERROR] code={code}, err={e}")
+        await message.answer(
+            LEXICON.get("registration_error", "Registration error. Try again later.")
+        )
         await state.clear()
         return
 
-    # Успешно
-    await message.answer(LEXICON["registration_success"].format(name=part.name))
+    if status == "not_found":
+        await message.answer(LEXICON["registration_not_found"])
+        await state.clear()
+        return
+
+    if status == "already":
+        await message.answer(
+            LEXICON["registration_already"].format(name=part.name)
+        )
+        await state.clear()
+        return
+
+    # Успешно зарегистрирован
+    await message.answer(
+        LEXICON["registration_success"].format(name=part.name)
+    )
+    await message.answer(
+        "Now you can use /start to access your banking menu."
+    )
     await state.clear()

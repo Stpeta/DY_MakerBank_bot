@@ -1,5 +1,3 @@
-# states/fsm.py
-
 from aiogram.fsm.state import StatesGroup, State
 
 class CourseCreation(StatesGroup):
@@ -12,3 +10,8 @@ class Registration(StatesGroup):
 
 class CourseFinish(StatesGroup):
     waiting_for_course = State()
+
+class CashOperations(StatesGroup):
+    waiting_for_withdraw_amount = State()
+    waiting_for_deposit_amount = State()
+    waiting_for_approval = State()

@@ -1,3 +1,5 @@
+#services/admin_menu.py
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.base import AsyncSessionLocal
 from database.crud import get_all_courses_by_admin

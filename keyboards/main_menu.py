@@ -4,7 +4,7 @@ from lexicon.lexicon_en import LEXICON
 # Описания команд
 COMMON_COMMANDS = {
     "start": LEXICON["cmd_start"],
-    "about": LEXICON["cmd_about"],
+    #"about": LEXICON["cmd_about"],
 }
 
 def get_main_menu_commands() -> list[BotCommand]:

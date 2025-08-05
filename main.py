@@ -2,12 +2,13 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+
 from config_data.config import load_config
 from database.base import engine, Base
-from handlers.common import common_router
 from handlers.admin import admin_router
-from handlers.participant import participant_router
+from handlers.common import common_router
 from handlers.guest import guest_router
+from handlers.participant import participant_router
 from keyboards.main_menu import get_main_menu_commands
 
 logging.basicConfig(
@@ -15,6 +16,7 @@ logging.basicConfig(
     format='[%(asctime)s] #%(levelname)-8s %(filename)s:%(lineno)d - %(name)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
 
 async def main() -> None:
     # 1) Загрузка конфига и инициализация бота
@@ -40,6 +42,7 @@ async def main() -> None:
 
     # 5) Старт polling
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
