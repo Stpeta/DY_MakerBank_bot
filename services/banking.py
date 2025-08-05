@@ -1,24 +1,26 @@
 import logging
 
 from database.base import AsyncSessionLocal
-from database.models import Transaction
 from database.crud import (
     get_participant_by_telegram_id,
     create_transaction,
     update_transaction_status
 )
+from database.models import Transaction
 
 logger = logging.getLogger(__name__)
 
+
+# region --- Cash Transactions ---
 
 async def create_withdrawal_request(
         telegram_id: int,
         amount: int
 ) -> int:
     """
-    Create a pending withdrawal transaction for the participant.
-    Raises:
-        ValueError: if the amount is not positive or exceeds available balance.
+    Create a pending withdrawal transaction.
+    Raises ValueError if the amount is not positive or exceeds available balance.
+    Returns the new tx.id.
     """
     async with AsyncSessionLocal() as session:
         # Fetch participant and check balance
@@ -42,8 +44,8 @@ async def create_withdrawal_request(
 
 
 async def create_deposit_request(
-    telegram_id: int,
-    amount: int
+        telegram_id: int,
+        amount: int
 ) -> int:
     """
     Create a pending deposit transaction.
@@ -65,9 +67,10 @@ async def create_deposit_request(
     logger.info(f"Deposit request created: tx_id={tx.id}, user_id={telegram_id}, amount={amount}")
     return tx.id
 
+
 async def cancel_transaction(
-    telegram_id: int,
-    tx_id: int
+        telegram_id: int,
+        tx_id: int
 ) -> None:
     """
     Cancel a pending transaction belonging to the given participant.
@@ -75,7 +78,9 @@ async def cancel_transaction(
     async with AsyncSessionLocal() as session:
         # we assume update_transaction_status will load and update tx
         await update_transaction_status(session,
-            await session.get(Transaction, tx_id),
-            "canceled"
-        )
+                                        await session.get(Transaction, tx_id),
+                                        "canceled"
+                                        )
     logger.info(f"Transaction canceled by user: tx_id={tx_id}, user_id={telegram_id}")
+
+# endregion --- Cash Transactions ---

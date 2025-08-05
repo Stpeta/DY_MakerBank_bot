@@ -1,6 +1,7 @@
 # crud.py - CRUD functions for MakerBank bot
 
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from typing import TypedDict
 
 from sqlalchemy import desc, func, case
@@ -151,16 +152,66 @@ async def register_participant(
 async def adjust_participant_balance(
         session: AsyncSession,
         participant: Participant,
-        delta: float
+        delta: float | Decimal
 ) -> Participant:
-    """Adjust main wallet balance: +delta deposit, -delta withdrawal."""
-    participant.balance += delta
+    """
+    Adjust main wallet balance by the given delta (can be fractional).
+    Rounds to 2 decimals.
+    """
+    # Ensure Decimal
+    change = Decimal(delta)
+    new_balance = (participant.balance + change).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    participant.balance = new_balance
     await session.commit()
     await session.refresh(participant)
     return participant
 
 
 # endregion --- Participant Registration & Main Balance ---
+
+# region --- Savings/Loan Account Adjustments ---
+async def adjust_savings_balance(
+        session: AsyncSession,
+        participant: Participant,
+        delta: float | Decimal
+) -> Participant:
+    """
+    Move coins into (delta>0) or out (delta<0) of savings account, update timestamp.
+    Rounds to 2 decimals.
+    """
+    change = Decimal(delta)
+    new_sav = (participant.savings_balance + change).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    participant.savings_balance = new_sav
+    if delta > 0:
+        participant.last_savings_deposit_at = datetime.utcnow()
+    await session.commit()
+    await session.refresh(participant)
+    return participant
+
+
+async def adjust_loan_balance(
+        session: AsyncSession,
+        participant: Participant,
+        delta: float | Decimal
+) -> Participant:
+    """
+    Issue (delta>0) or repay (delta<0) a loan. Rounds to 2 decimals.
+    """
+    change = Decimal(delta)
+    new_loan = (participant.loan_balance + change).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    participant.loan_balance = new_loan
+    await session.commit()
+    await session.refresh(participant)
+    return participant
+
+
+# endregion --- Savings/Loan Account Adjustments ---
 
 # region --- Course Statistics ---
 async def get_course_stats(

@@ -119,6 +119,24 @@ LEXICON = {
     "withdraw_cancelled": "Your withdrawal request has been cancelled.",
     "deposit_cancelled": "Your deposit request has been cancelled.",
 
+    # Buttons for admin to approve/decline
+    "button_approve": "✅ Approve",
+    "button_decline": "❌ Decline",
+
+    # Admin notifications when user creates a request
+    "admin_withdraw_request": "{name} requests withdrawal of {amount} 🪙 (tx_id={tx_id})",
+    "admin_deposit_request": "{name} requests deposit of {amount} 🪙 (tx_id={tx_id})",
+
+    # Admin UI messages after handling
+    "admin_tx_approved_admin": "Transaction {tx_id} approved.",
+    "admin_tx_declined_admin": "Transaction {tx_id} declined.",
+
+    # Participant notifications on approval/decline
+    "withdraw_approved": "✅ Your withdrawal of {amount} 🪙 has been approved.",
+    "withdraw_declined": "❌ Your withdrawal request of {amount} 🪙 has been declined.",
+    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your balance.",
+    "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.",
+
     # region --- Withdraw and Deposit Flows ---
 
 }

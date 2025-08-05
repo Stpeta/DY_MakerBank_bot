@@ -1,8 +1,10 @@
 # keyboards/admin.py
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from lexicon.lexicon_en import LEXICON
+
 from database.models import Course
+from lexicon.lexicon_en import LEXICON
+
 
 def main_menu_admin_kb() -> InlineKeyboardMarkup:
     """
@@ -15,6 +17,7 @@ def main_menu_admin_kb() -> InlineKeyboardMarkup:
             callback_data="admin:new_course"
         ),
     ]])
+
 
 def courses_list_kb(courses: list[Course]) -> InlineKeyboardMarkup:
     """
@@ -35,6 +38,7 @@ def courses_list_kb(courses: list[Course]) -> InlineKeyboardMarkup:
         ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+
 def course_actions_kb(course_id: int) -> InlineKeyboardMarkup:
     """
     Под карточкой курса: «Завершить курс» + «Назад»
@@ -49,3 +53,20 @@ def course_actions_kb(course_id: int) -> InlineKeyboardMarkup:
             callback_data="admin:back_to_main"
         ),
     ]])
+
+def tx_approval_kb(tx_id: int) -> InlineKeyboardMarkup:
+    """
+    Keyboard for admin to approve or decline a transaction.
+    """
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=LEXICON["button_approve"],
+                callback_data=f"admin:tx:approve:{tx_id}"
+            ),
+            InlineKeyboardButton(
+                text=LEXICON["button_decline"],
+                callback_data=f"admin:tx:decline:{tx_id}"
+            ),
+        ],
+    ])

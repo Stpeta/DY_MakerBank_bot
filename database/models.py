@@ -36,17 +36,13 @@ class Participant(Base):
     telegram_id = Column(BigInteger, nullable=True)
     is_registered = Column(Boolean, default=False)
 
-    # Main wallet balance (coins available)
-    balance = Column(BigInteger, default=0)
-
-    # Savings account balance; accrues weekly interest
-    savings_balance = Column(BigInteger, default=0)
-    last_savings_deposit_at = Column(DateTime, nullable=True)  # timestamp of last savings contribution
-
-    # Loan account balance; accrues weekly interest
-    loan_balance = Column(BigInteger, default=0)
+    # Balances support 2 decimal places, up to 6 digits before the point
+    balance = Column(Numeric(8, 2), default=0)
+    savings_balance = Column(Numeric(8, 2), default=0)
+    loan_balance = Column(Numeric(8, 2), default=0)
 
     course = relationship("Course", back_populates="participants")
+    transactions = relationship("Transaction", back_populates="participant")
 
 
 # Table to record changes in savings and loan interest rates
@@ -68,22 +64,15 @@ class Transaction(Base):
     participant_id = Column(Integer, ForeignKey("participants.id"), index=True, nullable=False)
 
     type = Column(Enum(
-        # Cash operations
         "cash_withdrawal", "cash_deposit",
-        # Savings account operations
-        "savings_deposit",  # move coins into savings
-        "savings_withdraw",  # move coins out of savings
-        "savings_interest",  # interest credit on savings
-        # Loan account operations
-        "loan_borrow",  # take out a loan
-        "loan_repay",  # repay a loan
-        "loan_interest",  # interest debit on loan
-        # Operator adjustments
+        "savings_deposit", "savings_withdraw", "savings_interest",
+        "loan_borrow", "loan_repay", "loan_interest",
         "operator_adjustment",
         name="tx_type"
     ), nullable=False)
 
-    amount = Column(Numeric, nullable=False)
+    # Amount also two decimals
+    amount = Column(Numeric(8, 2), nullable=False)
 
     status = Column(Enum(
         "pending", "completed", "declined", "canceled",
@@ -93,4 +82,4 @@ class Transaction(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     processed_at = Column(DateTime, nullable=True)
 
-    participant = relationship("Participant", backref="transactions")
+    participant = relationship("Participant", back_populates="transactions")

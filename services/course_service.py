@@ -1,7 +1,10 @@
-from database.base import AsyncSessionLocal
-from database.models import Course
+# services/course_service.py
+
 from database.crud import create_course, add_participants
 from services.utils import gen_registration_code
+from database.base import AsyncSessionLocal
+from database.models import Participant, Course
+from sqlalchemy import select
 
 
 async def create_course_with_participants(
@@ -44,3 +47,21 @@ async def create_course_with_participants(
         await add_participants(session, course.id, participants)
 
     return course, codes_map
+
+
+async def get_course_creator_id_for_participant(telegram_id: int) -> int | None:
+    """
+    Given a participant's Telegram ID, return the Telegram ID of the course creator (admin).
+    Returns None if participant or course not found.
+    """
+    async with AsyncSessionLocal() as session:
+        # Load participant with its course in one go
+        result = await session.execute(
+            select(Participant)
+            .options(selectinload(Participant.course))
+            .where(Participant.telegram_id == telegram_id)
+        )
+        participant = result.scalar_one_or_none()
+        if not participant or not participant.course:
+            return None
+        return participant.course.creator_id
