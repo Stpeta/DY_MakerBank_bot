@@ -86,8 +86,10 @@ LEXICON = {
     # region --- Participant Panel ---
 
     # Participant Main Menu and Display
+    "choose_course_prompt": "Please choose your course:",
+
     "main_balance_text": (
-        "📚 Course: {course_name}\n"
+        "🏫 Course: {course_name}\n"
         "👤 {name}\n\n"
         "💳 Balance: {balance}\n"
         "📥 Savings: {savings}\n"
@@ -111,7 +113,7 @@ LEXICON = {
     "deposit_amount_request": "Enter the amount to deposit 🪙:",
 
     "invalid_amount": "Please enter a valid positive number.",
-    "insufficient_funds": "You have insufficient funds.",
+    "insufficient_funds": "You have insufficient funds.\nEnter the amount to withdraw 🪙:",
 
     "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",
     "deposit_waiting_approval": "Your deposit request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",

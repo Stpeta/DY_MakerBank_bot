@@ -3,7 +3,6 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from database.crud_participant import get_participant_by_telegram_id
 from filters.role_filter import RoleFilter
 from keyboards.participant import main_menu_participant_kb
 from lexicon.lexicon_en import LEXICON

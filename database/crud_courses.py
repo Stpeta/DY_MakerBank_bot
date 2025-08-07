@@ -27,27 +27,6 @@ async def create_course(
     return course
 
 
-# async def get_course_by_name(
-#         session: AsyncSession,
-#         name: str
-# ) -> Course | None:
-#     """Retrieve a course by its unique name."""
-#     result = await session.execute(
-#         select(Course).where(Course.name == name)
-#     )
-#     return result.scalar_one_or_none()
-#
-#
-# async def get_latest_course(
-#         session: AsyncSession
-# ) -> Course | None:
-#     """Get the most recently created course."""
-#     result = await session.execute(
-#         select(Course).order_by(desc(Course.created_at)).limit(1)
-#     )
-#     return result.scalar_one_or_none()
-
-
 async def get_all_courses_by_admin(
         session: AsyncSession,
         creator_id: int

@@ -3,22 +3,25 @@ from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from database.models import Participant
 
 
-async def get_participant_by_telegram_id(
+async def get_participants_by_telegram_id(
         session: AsyncSession,
-        telegram_id: int
-) -> Participant | None:
-    """Fetch a registered participant by their Telegram ID."""
+        telegram_id: int,
+):
+    """Return all registered participants for a given Telegram ID."""
     result = await session.execute(
-        select(Participant).where(
+        select(Participant)
+        .options(selectinload(Participant.course))
+        .where(
             Participant.telegram_id == telegram_id,
-            Participant.is_registered == True
+            Participant.is_registered == True,
         )
     )
-    return result.scalar_one_or_none()
+    return result.scalars().all()
 
 
 async def get_participant_by_code(
@@ -46,9 +49,9 @@ async def register_participant(
 
 
 async def adjust_participant_balance(
-    session: AsyncSession,
-    participant: Participant,
-    delta: float | Decimal
+        session: AsyncSession,
+        participant: Participant,
+        delta: float | Decimal
 ) -> Participant:
     """
     Adjust main wallet balance by the given delta (can be fractional).

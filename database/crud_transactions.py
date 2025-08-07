@@ -27,26 +27,6 @@ async def create_transaction(
     return tx
 
 
-async def get_pending_transactions(
-        session: AsyncSession,
-        course_id: int
-) -> list[Transaction]:
-    """Fetch all pending cash deposits and withdrawals for approval."""
-    result = await session.execute(
-        select(Transaction)
-        .join(Participant)
-        .where(
-            Participant.course_id == course_id,
-            Transaction.status == "pending",
-            Transaction.type.in_(
-                ["cash_withdrawal", "cash_deposit"]
-            )
-        )
-        .order_by(Transaction.created_at)
-    )
-    return result.scalars().all()
-
-
 async def update_transaction_status(
         session: AsyncSession,
         tx: Transaction,

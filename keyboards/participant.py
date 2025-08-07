@@ -1,5 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from lexicon.lexicon_en import LEXICON
+
 
 # Participant Main Menu Keyboard
 # Shows only banking operation buttons; no cancel button here.
@@ -40,6 +42,7 @@ def main_menu_participant_kb() -> InlineKeyboardMarkup:
         ],
     ])
 
+
 # Cancel Operation Keyboard
 # Rendered only during an ongoing operation to allow cancellation.
 def cancel_operation_kb() -> InlineKeyboardMarkup:
@@ -54,3 +57,12 @@ def cancel_operation_kb() -> InlineKeyboardMarkup:
             ),
         ],
     ])
+
+
+def select_course_kb(courses: list[tuple[int, str]]) -> InlineKeyboardMarkup:
+    """Keyboard with course options for a participant."""
+    rows = [
+        [InlineKeyboardButton(text=name, callback_data=f"participant:choose_course:{pid}")]
+        for pid, name in courses
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)

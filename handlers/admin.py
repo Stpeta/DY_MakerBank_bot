@@ -133,6 +133,8 @@ async def admin_tx_approve(callback: CallbackQuery):
 
         # Apply balance change
         participant = await session.get(Participant, tx.participant_id)
+        course = await session.get(Course, participant.course_id)
+        course_name = course.name
         if tx.type == "cash_deposit":
             await adjust_participant_balance(session, participant, tx.amount)
         elif tx.type == "cash_withdrawal":
@@ -146,7 +148,9 @@ async def admin_tx_approve(callback: CallbackQuery):
     await callback.bot.send_message(participant.telegram_id, text)
 
     # Build the participant menu and send it
-    menu_text, menu_kb = await build_participant_menu(participant.telegram_id)
+    menu_text, menu_kb = await build_participant_menu(
+        participant.id, participant.name, course_name
+    )
     await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
@@ -172,6 +176,8 @@ async def admin_tx_decline(callback: CallbackQuery):
         # Decline the transaction
         await update_transaction_status(session, tx, "declined")
         participant = await session.get(Participant, tx.participant_id)
+        course = await session.get(Course, participant.course_id)
+        course_name = course.name
 
     # Notify the participant
     if tx.type == "cash_deposit":
@@ -181,7 +187,9 @@ async def admin_tx_decline(callback: CallbackQuery):
     await callback.bot.send_message(participant.telegram_id, text)
 
     # Build the participant menu and send it
-    menu_text, menu_kb = await build_participant_menu(participant.telegram_id)
+    menu_text, menu_kb = await build_participant_menu(
+        participant.id, participant.name, course_name
+    )
     await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
