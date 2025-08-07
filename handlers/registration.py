@@ -4,24 +4,29 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from filters.role_filter import RoleFilter
-from keyboards.participant import main_menu_participant_kb
 from lexicon.lexicon_en import LEXICON
 from services.participant_registration import register_by_code
 from states.fsm import Registration
 
-# Router for guest users
-guest_router = Router()
-guest_router.message.filter(RoleFilter("guest"))
+# Router for registration flows
+registration_router = Router()
 
 
-@guest_router.message(Command("start"))
+@registration_router.message(Command("start"), RoleFilter("guest"))
 async def cmd_start(message: Message, state: FSMContext):
-    """Prompt guest to enter registration code at start."""
-    await message.answer(LEXICON["registration_code_request"], parse_mode="HTML",)
+    """Start registration for guests via /start."""
+    await message.answer(LEXICON["registration_code_request"], parse_mode="HTML")
     await state.set_state(Registration.waiting_for_code)
 
 
-@guest_router.message(StateFilter(Registration.waiting_for_code))
+@registration_router.message(Command("register"), RoleFilter("participant"))
+async def cmd_register(message: Message, state: FSMContext):
+    """Allow existing participants to re-register using /register."""
+    await message.answer(LEXICON["registration_code_request"], parse_mode="HTML")
+    await state.set_state(Registration.waiting_for_code)
+
+
+@registration_router.message(StateFilter(Registration.waiting_for_code))
 async def process_registration_code(message: Message, state: FSMContext):
     """Process entered code, register participant."""
     code = message.text.strip().upper()

@@ -4,6 +4,7 @@ from lexicon.lexicon_en import LEXICON
 # Описания команд
 COMMON_COMMANDS = {
     "start": LEXICON["cmd_start"],
+    "register": LEXICON["cmd_register"],
     #"about": LEXICON["cmd_about"],
 }
 

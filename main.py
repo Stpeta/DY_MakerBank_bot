@@ -7,7 +7,7 @@ from config_data.config import load_config
 from database.base import engine, Base
 from handlers.admin import admin_router
 from handlers.common import common_router
-from handlers.guest import guest_router
+from handlers.registration import registration_router
 from handlers.participant import participant_router
 from keyboards.main_menu import get_main_menu_commands
 
@@ -28,7 +28,7 @@ async def main() -> None:
     dp.include_router(common_router)
     dp.include_router(admin_router)
     dp.include_router(participant_router)
-    dp.include_router(guest_router)
+    dp.include_router(registration_router)
 
     # 3) Установка общего меню команд
     commands = get_main_menu_commands()

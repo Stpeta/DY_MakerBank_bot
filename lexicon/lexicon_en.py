@@ -2,6 +2,7 @@ LEXICON = {
     # region --- Main Menu ---
 
     "cmd_start": "Start bot",
+    "cmd_register": "Register",
     "cmd_about": "About bot",
     "about_text": "MakerBank bot v1.0 by Dmitry Yakovlev\nContact the author: @nedanaec",  # Bot info text
 
