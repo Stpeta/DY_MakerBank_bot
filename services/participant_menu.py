@@ -1,5 +1,4 @@
 from aiogram.types import InlineKeyboardMarkup
-from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from database.base import AsyncSessionLocal
@@ -9,7 +8,7 @@ from lexicon.lexicon_en import LEXICON
 
 
 async def build_participant_menu(
-        telegram_id: int
+        participant_id: int
 ) -> tuple[str, InlineKeyboardMarkup]:
     """
     Construct the participant's main menu text and keyboard.
@@ -21,18 +20,13 @@ async def build_participant_menu(
     """
     # Load participant with related course eagerly
     async with AsyncSessionLocal() as session:
-        stmt = (
-            select(Participant)
-            .options(selectinload(Participant.course))
-            .where(
-                Participant.telegram_id == telegram_id,
-                Participant.is_registered == True
-            )
+        participant = await session.get(
+            Participant,
+            participant_id,
+            options=[selectinload(Participant.course)],
         )
-        result = await session.execute(stmt)
-        participant = result.scalar_one_or_none()
 
-        if not participant:
+        if not participant or not participant.is_registered:
             text = "Participant not found or not registered."
             return text, InlineKeyboardMarkup()
 

@@ -146,7 +146,7 @@ async def admin_tx_approve(callback: CallbackQuery):
     await callback.bot.send_message(participant.telegram_id, text)
 
     # Build the participant menu and send it
-    menu_text, menu_kb = await build_participant_menu(participant.telegram_id)
+    menu_text, menu_kb = await build_participant_menu(participant.id)
     await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
@@ -181,7 +181,7 @@ async def admin_tx_decline(callback: CallbackQuery):
     await callback.bot.send_message(participant.telegram_id, text)
 
     # Build the participant menu and send it
-    menu_text, menu_kb = await build_participant_menu(participant.telegram_id)
+    menu_text, menu_kb = await build_participant_menu(participant.id)
     await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
