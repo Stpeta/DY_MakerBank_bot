@@ -1,11 +1,10 @@
+# services/banking.py
+
 import logging
 
 from database.base import AsyncSessionLocal
-from database.crud import (
-    get_participant_by_telegram_id,
-    create_transaction,
-    update_transaction_status
-)
+from database.crud_transactions import create_transaction, update_transaction_status
+from database.crud_participant import get_participant_by_telegram_id
 from database.models import Transaction
 
 logger = logging.getLogger(__name__)

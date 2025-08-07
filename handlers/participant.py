@@ -6,7 +6,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from database.base import AsyncSessionLocal
-from database.crud import get_participant_by_telegram_id
+from database.crud_participant import get_participant_by_telegram_id
+from database.models import Course
 from filters.role_filter import RoleFilter
 from keyboards.admin import tx_approval_kb
 from keyboards.participant import main_menu_participant_kb, cancel_operation_kb
@@ -30,7 +31,7 @@ participant_router.callback_query.filter(RoleFilter("participant"))
 async def participant_main(message: Message):
     """Show participant’s main banking menu."""
     text, kb = await build_participant_menu(message.from_user.id)
-    await message.answer(text, reply_markup=kb)
+    await message.answer(text,parse_mode="HTML", reply_markup=kb)
 
 
 # region --- Withdraw Flow ---
@@ -40,6 +41,7 @@ async def ask_withdraw(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["withdraw_amount_request"],
+        parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
     await state.set_state(CashOperations.waiting_for_withdraw_amount)
@@ -47,11 +49,12 @@ async def ask_withdraw(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_withdraw_amount))
 async def process_withdraw(message: Message, state: FSMContext):
-    """Handle withdrawal amount, create pending request, notify admin, await approval."""
+    # Handle withdrawal amount, create pending request, notify admin, await approval.
     text = message.text.strip()
     if not text.isdigit() or int(text) <= 0:
         return await message.answer(
             LEXICON["invalid_amount"],
+            parse_mode="HTML",
             reply_markup=cancel_operation_kb()
         )
     amount = int(text)
@@ -62,6 +65,7 @@ async def process_withdraw(message: Message, state: FSMContext):
     except ValueError as e:
         return await message.answer(
             str(e),
+            parse_mode="HTML",
             reply_markup=main_menu_participant_kb()
         )
 
@@ -69,12 +73,16 @@ async def process_withdraw(message: Message, state: FSMContext):
     async with AsyncSessionLocal() as session:
         participant = await get_participant_by_telegram_id(session, message.from_user.id)
         course_id = participant.course_id
+        # Получаем название курса
+        course = await session.get(Course, course_id)
+        course_name = course.name
 
     # Notify the course creator (admin)
     await send_message_to_course_creator(
         bot=message.bot,
         course_id=course_id,
         text=LEXICON["admin_withdraw_request"].format(
+            course_name=course_name,
             name=participant.name,
             amount=amount,
             tx_id=tx_id
@@ -87,7 +95,8 @@ async def process_withdraw(message: Message, state: FSMContext):
     await state.set_state(CashOperations.waiting_for_approval)
 
     await message.answer(
-        LEXICON["withdraw_waiting_approval"].format(amount=amount),
+        LEXICON["withdraw_waiting_approval"].format(amount=amount,tx_id=tx_id),
+        parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
 
@@ -101,6 +110,7 @@ async def ask_deposit(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["deposit_amount_request"],
+        parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
     await state.set_state(CashOperations.waiting_for_deposit_amount)
@@ -113,6 +123,7 @@ async def process_deposit(message: Message, state: FSMContext):
     if not text.isdigit() or int(text) <= 0:
         return await message.answer(
             LEXICON["invalid_amount"],
+            parse_mode="HTML",
             reply_markup=cancel_operation_kb()
         )
     amount = int(text)
@@ -123,6 +134,7 @@ async def process_deposit(message: Message, state: FSMContext):
     except ValueError as e:
         return await message.answer(
             str(e),
+            parse_mode="HTML",
             reply_markup=main_menu_participant_kb()
         )
 
@@ -130,12 +142,16 @@ async def process_deposit(message: Message, state: FSMContext):
     async with AsyncSessionLocal() as session:
         participant = await get_participant_by_telegram_id(session, message.from_user.id)
         course_id = participant.course_id
+        # Получаем название курса
+        course = await session.get(Course, course_id)
+        course_name = course.name
 
     # Notify the course creator (admin)
     await send_message_to_course_creator(
         bot=message.bot,
         course_id=course_id,
         text=LEXICON["admin_deposit_request"].format(
+            course_name=course_name,
             name=participant.name,
             amount=amount,
             tx_id=tx_id
@@ -148,10 +164,10 @@ async def process_deposit(message: Message, state: FSMContext):
     await state.set_state(CashOperations.waiting_for_approval)
 
     await message.answer(
-        LEXICON["deposit_waiting_approval"].format(amount=amount),
+        LEXICON["deposit_waiting_approval"].format(amount=amount, tx_id=tx_id),
+        parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
-
 
 # endregion --- Deposit Flow ---
 
@@ -172,6 +188,7 @@ async def user_cancel_withdraw(callback: CallbackQuery, state: FSMContext):
     text, kb = await build_participant_menu(callback.from_user.id)
     await callback.message.edit_text(
         LEXICON["withdraw_cancelled"],
+        parse_mode="HTML",
         reply_markup=kb
     )
     await callback.answer()
@@ -188,7 +205,7 @@ async def cancel_during_withdraw(callback: CallbackQuery, state: FSMContext):
 
     # Rebuild and show main menu
     text, kb = await build_participant_menu(callback.from_user.id)
-    await callback.message.edit_text(text, reply_markup=kb)
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 @participant_router.callback_query(
@@ -201,6 +218,6 @@ async def cancel_during_deposit(callback: CallbackQuery, state: FSMContext):
     await state.clear()
 
     text, kb = await build_participant_menu(callback.from_user.id)
-    await callback.message.edit_text(text, reply_markup=kb)
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
 
 # endregion --- Withdraw/Deposit Cancellation ---

@@ -12,37 +12,37 @@ from lexicon.lexicon_en import LEXICON
 
 async def start_course_flow(message: types.Message, state: FSMContext) -> None:
     await state.clear()
-    await message.answer(LEXICON["course_name_request"])
+    await message.answer(LEXICON["course_name_request"], parse_mode="HTML",)
     await state.set_state(CourseCreation.waiting_for_name)
 
 
 async def process_course_name(message: types.Message, state: FSMContext) -> None:
     await state.update_data(name=message.text.strip())
-    await message.answer(LEXICON["course_description_request"])
+    await message.answer(LEXICON["course_description_request"], parse_mode="HTML",)
     await state.set_state(CourseCreation.waiting_for_description)
 
 
 async def process_course_description(message: types.Message, state: FSMContext) -> None:
     await state.update_data(description=message.text.strip())
-    await message.answer(LEXICON["course_sheet_request"])
+    await message.answer(LEXICON["course_sheet_request"], parse_mode="HTML",)
     await state.set_state(CourseCreation.waiting_for_sheet)
 
 
 async def process_course_sheet(message: types.Message, state: FSMContext) -> None:
     sheet_url = message.text.strip()
     if not is_valid_sheet_url(sheet_url):
-        await message.answer(LEXICON["course_sheet_invalid_format"])
+        await message.answer(LEXICON["course_sheet_invalid_format"], parse_mode="HTML",)
         return
 
     # 1) читаем участников
     try:
         participants_raw = fetch_students(sheet_url)
     except Exception:  # gspread.exceptions.APIError и др.
-        await message.answer(LEXICON["course_sheet_unreachable"])
+        await message.answer(LEXICON["course_sheet_unreachable"], parse_mode="HTML",)
         return
 
     if not participants_raw:
-        await message.answer(LEXICON["course_sheet_empty"])
+        await message.answer(LEXICON["course_sheet_empty"], parse_mode="HTML",)
         return
 
     # 2) сервис создаёт курс и возвращает карту кодов
@@ -60,9 +60,7 @@ async def process_course_sheet(message: types.Message, state: FSMContext) -> Non
 
     # 4) финальный ответ
     await message.answer(
-        LEXICON["course_created"].format(
-            name=course.name,
-            count=len(codes_map),
-        )
+        LEXICON["course_created"].format(name=course.name, count=len(codes_map)),
+        parse_mode="HTML",
     )
     await state.clear()

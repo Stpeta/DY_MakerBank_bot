@@ -1,13 +1,15 @@
 from aiogram.types import InlineKeyboardMarkup
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+
 from database.base import AsyncSessionLocal
 from database.models import Participant
-from lexicon.lexicon_en import LEXICON
 from keyboards.participant import main_menu_participant_kb
+from lexicon.lexicon_en import LEXICON
+
 
 async def build_participant_menu(
-    telegram_id: int
+        telegram_id: int
 ) -> tuple[str, InlineKeyboardMarkup]:
     """
     Construct the participant's main menu text and keyboard.

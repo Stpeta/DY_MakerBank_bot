@@ -87,34 +87,34 @@ LEXICON = {
 
     # Participant Main Menu and Display
     "main_balance_text": (
-        "👤 {name}\n"
-        "📚 Course: {course_name}\n\n"
-        "💰 Balance: {balance} 🪙\n"
-        "📈 Savings: {savings} 🪙\n"
-        "📉 Loans: {loan} 🪙"
+        "📚 Course: {course_name}\n"
+        "👤 {name}\n\n"
+        "💳 Balance: {balance}\n"
+        "📥 Savings: {savings}\n"
+        "🤑 Loans: {loan}"
     ),  # Overview of participant balances
 
     # Inline Keyboard Buttons
-    "button_withdraw_cash": "💰 Withdraw Cash",
-    "button_deposit_cash": "🏦 Deposit Cash",
-    "button_to_savings": "📥 To Savings",
-    "button_from_savings": "📤 From Savings",
-    "button_take_loan": "💳 Take Loan",
-    "button_repay_loan": "💵 Repay Loan",
+    "button_withdraw_cash": "💳➔💰 Withdraw Cash",
+    "button_deposit_cash": "💰➔💳 Deposit Cash",
+    "button_to_savings": "💳➔📥 To Savings",
+    "button_from_savings": "📥➔💳 From Savings",
+    "button_repay_loan": "💳➔🤑 Repay Loan",
+    "button_take_loan": "🤑➔💳 Take Loan",
     "button_cancel": "❌ Cancel",
 
     # endregion --- Participant Panel ---
 
     # region --- Withdraw and Deposit Flows ---
 
-    "withdraw_amount_request": "Enter the amount to withdraw (🪙):",
-    "deposit_amount_request": "Enter the amount to deposit (🪙):",
+    "withdraw_amount_request": "Enter the amount to withdraw 🪙:",
+    "deposit_amount_request": "Enter the amount to deposit 🪙:",
 
     "invalid_amount": "Please enter a valid positive number.",
     "insufficient_funds": "You have insufficient funds.",
 
-    "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.",
-    "deposit_waiting_approval": "Your deposit request of {amount} 🪙 is pending operator approval.",
+    "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",
+    "deposit_waiting_approval": "Your deposit request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",
 
     "withdraw_cancelled": "Your withdrawal request has been cancelled.",
     "deposit_cancelled": "Your deposit request has been cancelled.",
@@ -124,18 +124,18 @@ LEXICON = {
     "button_decline": "❌ Decline",
 
     # Admin notifications when user creates a request
-    "admin_withdraw_request": "{name} requests withdrawal of {amount} 🪙 (tx_id={tx_id})",
-    "admin_deposit_request": "{name} requests deposit of {amount} 🪙 (tx_id={tx_id})",
+    "admin_withdraw_request": "<b>{course_name}</b>\n💳➔💰\n{name} requests withdrawal of {amount} 🪙\n(tx_id: {tx_id})",
+    "admin_deposit_request": "<b>{course_name}</b>\n💰➔💳\n{name} requests deposit of {amount} 🪙\n(tx_id: {tx_id})",
 
     # Admin UI messages after handling
-    "admin_tx_approved_admin": "Transaction {tx_id} approved.",
-    "admin_tx_declined_admin": "Transaction {tx_id} declined.",
+    "admin_tx_approved_admin": "✅ Transaction (tx_id: {tx_id}) approved.",
+    "admin_tx_declined_admin": "❌ Transaction (tx_id: {tx_id}) declined.",
 
     # Participant notifications on approval/decline
-    "withdraw_approved": "✅ Your withdrawal of {amount} 🪙 has been approved.",
-    "withdraw_declined": "❌ Your withdrawal request of {amount} 🪙 has been declined.",
-    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your balance.",
-    "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.",
+    "withdraw_approved": "✅ Your withdrawal of {amount} 🪙 has been approved.\n(tx_id: {tx_id})",
+    "withdraw_declined": "❌ Your withdrawal request of {amount} 🪙 has been declined.\n(tx_id: {tx_id})",
+    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your balance.\n(tx_id: {tx_id})",
+    "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.\n(tx_id: {tx_id})",
 
     # region --- Withdraw and Deposit Flows ---
 

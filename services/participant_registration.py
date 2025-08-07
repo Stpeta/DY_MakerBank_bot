@@ -1,7 +1,7 @@
 # services/participant_registration.py
 
 from database.base import AsyncSessionLocal
-from database.crud import get_participant_by_code, register_participant
+from database.crud_participant import get_participant_by_code, register_participant
 
 
 async def register_by_code(code: str, telegram_id: int):

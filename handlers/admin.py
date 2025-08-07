@@ -13,12 +13,9 @@ from aiogram.types import (
 )
 
 from database.base import AsyncSessionLocal
-from database.crud import (
-    get_course_stats,
-    finish_course,
-    update_transaction_status,
-    adjust_participant_balance,
-)
+from database.crud_transactions import update_transaction_status
+from database.crud_participant import adjust_participant_balance
+from database.crud_courses import finish_course, get_course_stats
 from database.models import Course, Transaction, Participant
 from filters.role_filter import RoleFilter
 from keyboards.admin import course_actions_kb
@@ -30,6 +27,7 @@ from services.course_creation_flow import (
     process_course_description,
     process_course_sheet,
 )
+from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info
 from states.fsm import CourseCreation
 
@@ -41,7 +39,7 @@ admin_router.message.filter(RoleFilter("admin"))
 @admin_router.message(Command("start"))
 async def admin_main(message: Message):
     text, kb = await build_admin_menu(message.from_user.id)
-    await message.answer(text, reply_markup=kb)
+    await message.answer(text, parse_mode="HTML", reply_markup=kb)
 
 
 @admin_router.callback_query(F.data.startswith("admin:course:info:"))
@@ -71,7 +69,7 @@ async def admin_course_info(callback: CallbackQuery):
 async def admin_back(callback: CallbackQuery):
     await callback.answer()
     text, kb = await build_admin_menu(callback.from_user.id)
-    await callback.message.edit_text(text, reply_markup=kb)
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 @admin_router.callback_query(F.data.startswith("admin:course:finish:"))
@@ -84,7 +82,7 @@ async def admin_course_finish(callback: CallbackQuery):
 
     # после завершения возвращаем главное меню одним edit
     text, kb = await build_admin_menu(callback.from_user.id)
-    await callback.message.edit_text(text, reply_markup=kb)
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 # region --- FSM для /new_course ---
@@ -142,14 +140,20 @@ async def admin_tx_approve(callback: CallbackQuery):
 
     # Notify the participant
     if tx.type == "cash_deposit":
-        text = LEXICON["deposit_approved"].format(amount=tx.amount)
+        text = LEXICON["deposit_approved"].format(amount=tx.amount, tx_id=tx_id)
     else:
-        text = LEXICON["withdraw_approved"].format(amount=tx.amount)
+        text = LEXICON["withdraw_approved"].format(amount=tx.amount,tx_id=tx_id)
     await callback.bot.send_message(participant.telegram_id, text)
 
-    # Update the admin’s notification message to show it’s handled
+    # Build the participant menu and send it
+    menu_text, menu_kb = await build_participant_menu(participant.telegram_id)
+    await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
+
+    # Mark the admin’s notification as handled
     await callback.message.edit_text(
-        f"{callback.message.text}\n\nTransaction {tx_id} approved.",
+        f"{callback.message.text}\n\n"
+        f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id)}",
+        parse_mode="HTML",
         reply_markup=None
     )
 
@@ -171,14 +175,20 @@ async def admin_tx_decline(callback: CallbackQuery):
 
     # Notify the participant
     if tx.type == "cash_deposit":
-        text = LEXICON["deposit_declined"].format(amount=tx.amount)
+        text = LEXICON["deposit_declined"].format(amount=tx.amount, tx_id=tx_id)
     else:
-        text = LEXICON["withdraw_declined"].format(amount=tx.amount)
+        text = LEXICON["withdraw_declined"].format(amount=tx.amount, tx_id=tx_id)
     await callback.bot.send_message(participant.telegram_id, text)
+
+    # Build the participant menu and send it
+    menu_text, menu_kb = await build_participant_menu(participant.telegram_id)
+    await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
     await callback.message.edit_text(
-        f"{callback.message.text}\n\nTransaction {tx_id} declined.",
+        f"{callback.message.text}\n\n"
+        f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id)}",
+        parse_mode="HTML",
         reply_markup=None
     )
 

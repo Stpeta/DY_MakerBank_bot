@@ -3,7 +3,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from database.crud import get_participant_by_telegram_id
+from database.crud_participant import get_participant_by_telegram_id
 from filters.role_filter import RoleFilter
 from keyboards.participant import main_menu_participant_kb
 from lexicon.lexicon_en import LEXICON
@@ -18,7 +18,7 @@ guest_router.message.filter(RoleFilter("guest"))
 @guest_router.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     """Prompt guest to enter registration code at start."""
-    await message.answer(LEXICON["registration_code_request"])
+    await message.answer(LEXICON["registration_code_request"], parse_mode="HTML",)
     await state.set_state(Registration.waiting_for_code)
 
 
@@ -32,28 +32,32 @@ async def process_registration_code(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[REGISTRATION ERROR] code={code}, err={e}")
         await message.answer(
-            LEXICON.get("registration_error", "Registration error. Try again later.")
+            LEXICON.get("registration_error", "Registration error. Try again later."),
+            parse_mode="HTML",
         )
         await state.clear()
         return
 
     if status == "not_found":
-        await message.answer(LEXICON["registration_not_found"])
+        await message.answer(LEXICON["registration_not_found"], parse_mode="HTML",)
         await state.clear()
         return
 
     if status == "already":
         await message.answer(
-            LEXICON["registration_already"].format(name=part.name)
+            LEXICON["registration_already"].format(name=part.name),
+            parse_mode="HTML",
         )
         await state.clear()
         return
 
     # Успешно зарегистрирован
     await message.answer(
-        LEXICON["registration_success"].format(name=part.name)
+        LEXICON["registration_success"].format(name=part.name),
+        parse_mode="HTML",
     )
     await message.answer(
-        "Now you can use /start to access your banking menu."
+        "Now you can use /start to access your banking menu.",
+        parse_mode="HTML",
     )
     await state.clear()

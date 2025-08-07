@@ -11,4 +11,4 @@ async def cmd_about(message: Message):
     """
     Общий хэндлер для /about — работает для любого пользователя.
     """
-    await message.answer(LEXICON["about_text"])
+    await message.answer(LEXICON["about_text"], parse_mode="HTML",)

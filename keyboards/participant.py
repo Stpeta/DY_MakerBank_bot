@@ -30,12 +30,12 @@ def main_menu_participant_kb() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
-                text=LEXICON["button_take_loan"],
-                callback_data="participant:take_loan"
-            ),
-            InlineKeyboardButton(
                 text=LEXICON["button_repay_loan"],
                 callback_data="participant:repay_loan"
+            ),
+            InlineKeyboardButton(
+                text=LEXICON["button_take_loan"],
+                callback_data="participant:take_loan"
             ),
         ],
     ])

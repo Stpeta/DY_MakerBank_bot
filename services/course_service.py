@@ -1,6 +1,6 @@
 # services/course_service.py
 
-from database.crud import create_course, add_participants
+from database.crud_courses import create_course, add_participants
 from services.utils import gen_registration_code
 from database.base import AsyncSessionLocal
 from database.models import Participant, Course
