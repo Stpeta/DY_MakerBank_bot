@@ -122,7 +122,8 @@ LEXICON = {
     "deposit_amount_request": "Enter the amount to deposit 🪙:",
 
     "invalid_amount": "Please enter a valid positive number.",
-    "insufficient_funds": "You have insufficient funds.\nEnter the amount to withdraw 🪙:",
+    "insufficient_funds": "⚠️ You have insufficient funds.\nEnter the amount to withdraw 🪙:",
+    "loan_repay_exceeds_loan_balance": "⚠️ Repay amount cannot exceed the remaining loan balance.",
 
     # Savings and loans operations
     "to_savings_amount_request": "Enter amount to transfer to savings 🪙:",
@@ -133,10 +134,10 @@ LEXICON = {
     "savings_withdraw_success": "✅ {amount} 🪙 withdrawn from savings.",
     "loan_take_success": "✅ Loan of {amount} 🪙 issued.",
     "loan_repay_success": "✅ Loan repaid by {amount} 🪙.",
-    "savings_locked_until": "⏳ Savings are locked until {unlock_time:%d.%m.%Y %H:%M UTC}.",
-    "savings_lock_warning": "\n<i>⚠️ After deposit, funds cannot be withdrawn for {days} days (until {unlock_time:%d.%m.%Y %H:%M UTC}).</i>",
-    "savings_insufficient": "You don't have that much in savings.",
-    "loan_limit_reached": "Loan limit is {limit} 🪙.",
+    "savings_locked_until": "⚠️ Savings are locked until {unlock_time:%d.%m.%Y %H:%M UTC}.",
+    "savings_lock_warning": "\n<i>⚠️️ After deposit, funds cannot be withdrawn for {days} days (until {unlock_time:%d.%m.%Y %H:%M UTC}).</i>",
+    "savings_insufficient": "⚠️ You don't have that much in savings.",
+    "loan_limit_reached": "⚠️ Loan limit is {limit} 🪙.",
 
     "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.\n"
                                  "<code>{course_name}, {name}, tx_id: {tx_id}</code>",

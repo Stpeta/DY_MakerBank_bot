@@ -161,15 +161,16 @@ async def repay_loan(participant_id: int, amount: int) -> None:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.balance:
             raise ValueError(LEXICON["insufficient_funds"])
-        repay = min(amount, participant.loan_balance)
+        if amount > participant.loan_balance:
+            raise ValueError(LEXICON["loan_repay_exceeds_loan_balance"])
 
-        await adjust_participant_balance(session, participant, -repay)
-        await adjust_loan_balance(session, participant, -repay)
+        await adjust_participant_balance(session, participant, -amount)
+        await adjust_loan_balance(session, participant, -amount)
         await create_transaction(
             session,
             participant_id=participant_id,
             tx_type="loan_repay",
-            amount=repay,
+            amount=amount,
             status="completed",
         )
 
