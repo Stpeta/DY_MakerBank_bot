@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta
 
 from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
@@ -7,6 +8,7 @@ from aiogram.types import Message, CallbackQuery
 
 from database.base import AsyncSessionLocal
 from database.crud_participant import get_participants_by_telegram_id
+from database.models import Participant, Course
 from filters.role_filter import RoleFilter
 from keyboards.admin import tx_approval_kb
 from keyboards.participant import (
@@ -247,8 +249,20 @@ async def process_deposit(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:to_savings")
 async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    data = await state.get_data()
+    course_id = data.get("course_id")
+    async with AsyncSessionLocal() as session:
+        course = await session.get(Course, course_id)
+    unlock_time = datetime.utcnow() + timedelta(days=course.savings_withdrawal_delay)
+    text = (
+        LEXICON["to_savings_amount_request"]
+        + "\n"
+        + LEXICON["savings_lock_warning"].format(
+            days=course.savings_withdrawal_delay, unlock_time=unlock_time
+        )
+    )
     await callback.message.edit_text(
-        LEXICON["to_savings_amount_request"],
+        text,
         parse_mode="HTML",
         reply_markup=cancel_operation_kb(),
     )
@@ -282,13 +296,30 @@ async def process_to_savings(message: Message, state: FSMContext):
     await message.answer(
         LEXICON["savings_deposit_success"].format(amount=amount),
         parse_mode="HTML",
-        reply_markup=kb,
     )
+    await message.answer(text_menu, parse_mode="HTML", reply_markup=kb)
 
 
 @participant_router.callback_query(F.data == "participant:from_savings")
 async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    data = await state.get_data()
+    pid = data.get("participant_id")
+    async with AsyncSessionLocal() as session:
+        participant = await session.get(Participant, pid)
+        course = await session.get(Course, participant.course_id)
+    last = participant.last_savings_deposit_at
+    if last and datetime.utcnow() - last < timedelta(days=course.savings_withdrawal_delay):
+        unlock_time = last + timedelta(days=course.savings_withdrawal_delay)
+        await callback.message.edit_text(
+            LEXICON["savings_locked_until"].format(unlock_time=unlock_time),
+            parse_mode="HTML",
+        )
+        text_menu, kb = await build_participant_menu(
+            pid, data.get("participant_name"), data.get("course_name")
+        )
+        await callback.message.answer(text_menu, parse_mode="HTML", reply_markup=kb)
+        return
     await callback.message.edit_text(
         LEXICON["from_savings_amount_request"],
         parse_mode="HTML",
@@ -324,8 +355,8 @@ async def process_from_savings(message: Message, state: FSMContext):
     await message.answer(
         LEXICON["savings_withdraw_success"].format(amount=amount),
         parse_mode="HTML",
-        reply_markup=kb,
     )
+    await message.answer(text_menu, parse_mode="HTML", reply_markup=kb)
 
 # endregion --- Savings Flow ---
 
@@ -369,8 +400,8 @@ async def process_take_loan(message: Message, state: FSMContext):
     await message.answer(
         LEXICON["loan_take_success"].format(amount=amount),
         parse_mode="HTML",
-        reply_markup=kb,
     )
+    await message.answer(text_menu, parse_mode="HTML", reply_markup=kb)
 
 
 @participant_router.callback_query(F.data == "participant:repay_loan")
@@ -411,8 +442,8 @@ async def process_repay_loan(message: Message, state: FSMContext):
     await message.answer(
         LEXICON["loan_repay_success"].format(amount=amount),
         parse_mode="HTML",
-        reply_markup=kb,
     )
+    await message.answer(text_menu, parse_mode="HTML", reply_markup=kb)
 
 # endregion --- Loan Flow ---
 
