@@ -60,8 +60,4 @@ async def process_registration_code(message: Message, state: FSMContext):
         LEXICON["registration_success"].format(name=part.name),
         parse_mode="HTML",
     )
-    await message.answer(
-        "Now you can use /start to access your banking menu.",
-        parse_mode="HTML",
-    )
     await state.clear()

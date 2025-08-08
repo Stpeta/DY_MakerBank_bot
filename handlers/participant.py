@@ -7,7 +7,6 @@ from aiogram.types import Message, CallbackQuery
 
 from database.base import AsyncSessionLocal
 from database.crud_participant import get_participants_by_telegram_id
-
 from filters.role_filter import RoleFilter
 from keyboards.admin import tx_approval_kb
 from keyboards.participant import (
@@ -15,7 +14,6 @@ from keyboards.participant import (
     cancel_operation_kb,
     select_course_kb,
 )
-
 from lexicon.lexicon_en import LEXICON
 from services.banking import (
     create_withdrawal_request,
@@ -56,7 +54,7 @@ async def participant_main(message: Message, state: FSMContext):
         text, kb = await build_participant_menu(p.id, p.name, p.course.name)
         await message.answer(text, parse_mode="HTML", reply_markup=kb)
     else:
-        courses = [(p.id, p.course.name) for p in participants]
+        courses = [(p.id, p.course.name, p.name) for p in participants]
         data = {
             str(p.id): {
                 "participant_name": p.name,
@@ -155,7 +153,7 @@ async def process_withdraw(message: Message, state: FSMContext):
     await state.set_state(CashOperations.waiting_for_approval)
 
     await message.answer(
-        LEXICON["withdraw_waiting_approval"].format(amount=amount,tx_id=tx_id),
+        LEXICON["withdraw_waiting_approval"].format(amount=amount, tx_id=tx_id),
         parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
@@ -228,6 +226,7 @@ async def process_deposit(message: Message, state: FSMContext):
         parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
+
 
 # endregion --- Deposit Flow ---
 

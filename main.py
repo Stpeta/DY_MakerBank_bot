@@ -1,8 +1,6 @@
 import asyncio
 import logging
-
 from aiogram import Bot, Dispatcher
-
 from config_data.config import load_config
 from database.base import engine, Base
 from handlers.admin import admin_router

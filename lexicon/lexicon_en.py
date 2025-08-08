@@ -42,7 +42,8 @@ LEXICON = {
     # "registration_welcome": 'To join a course, enter your registration code:',  # /start flow
     "registration_not_found": "❌ Code not found. Please check and try again.",  # Invalid code
     "registration_already": "⚠️ You are already registered, {name}.",  # Already registered
-    "registration_success": "✅ You have been registered as {name}! Welcome.",  # Success
+    "registration_success": "✅ You have been registered as {name}! Welcome.\n\n"
+                            "Now you can use /start to access your banking menu.",  # Success
 
     # endregion --- Participant Registration ---
 

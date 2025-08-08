@@ -59,10 +59,10 @@ def cancel_operation_kb() -> InlineKeyboardMarkup:
     ])
 
 
-def select_course_kb(courses: list[tuple[int, str]]) -> InlineKeyboardMarkup:
+def select_course_kb(courses: list[tuple[int, str, str]]) -> InlineKeyboardMarkup:
     """Keyboard with course options for a participant."""
     rows = [
-        [InlineKeyboardButton(text=name, callback_data=f"participant:choose_course:{pid}")]
-        for pid, name in courses
+        [InlineKeyboardButton(text=f"{name}: {participant_name}", callback_data=f"participant:choose_course:{pid}")]
+        for pid, name, participant_name in courses
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)

@@ -18,8 +18,8 @@ async def get_user_role(telegram_id: int) -> str:
         part = await session.execute(
             select(Participant).where(Participant.telegram_id == telegram_id)
         )
-        part = part.scalar_one_or_none()
-
+        part = part.scalars().first()
+        
     if part and part.is_registered:
         return "participant"
     return "guest"
