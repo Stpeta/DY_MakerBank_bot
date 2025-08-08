@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from _decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,14 +11,15 @@ async def create_transaction(
         session: AsyncSession,
         participant_id: int,
         tx_type: str,
-        amount: float,
+        amount: float | Decimal,
         status: str = "pending"
 ) -> Transaction:
     """Create a new transaction record with optional pending status."""
+    amt = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     tx = Transaction(
         participant_id=participant_id,
         type=tx_type,
-        amount=amount,
+        amount=amt,
         status=status,
         created_at=datetime.now(timezone.utc)
     )

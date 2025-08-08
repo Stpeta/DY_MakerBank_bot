@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from _decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import select
 
@@ -85,10 +86,11 @@ async def cancel_transaction(
 
 # region --- Savings and Loans ---
 
-async def move_to_savings(participant_id: int, amount: int) -> None:
+async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
     """Transfer amount from main balance to savings immediately."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
+        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.balance:
@@ -105,11 +107,12 @@ async def move_to_savings(participant_id: int, amount: int) -> None:
         )
 
 
-async def withdraw_from_savings(participant_id: int, amount: int) -> None:
+async def withdraw_from_savings(participant_id: int, amount: Decimal | float) -> None:
     """Move funds from savings back to main balance respecting lock period."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         course = await session.get(Course, participant.course_id)
+        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.savings_balance:
@@ -130,11 +133,12 @@ async def withdraw_from_savings(participant_id: int, amount: int) -> None:
         )
 
 
-async def take_loan(participant_id: int, amount: int) -> None:
+async def take_loan(participant_id: int, amount: Decimal | float) -> None:
     """Issue a loan to participant up to course limit."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         course = await session.get(Course, participant.course_id)
+        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if participant.loan_balance + amount > course.max_loan_amount:
@@ -153,10 +157,11 @@ async def take_loan(participant_id: int, amount: int) -> None:
         )
 
 
-async def repay_loan(participant_id: int, amount: int) -> None:
+async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
     """Repay part of the loan from main balance."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
+        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.balance:
@@ -186,7 +191,10 @@ async def apply_weekly_interest(course_id: int) -> None:
         participants = result.scalars().all()
         for p in participants:
             if savings_rate and p.savings_balance > 0:
-                interest = float(p.savings_balance) * savings_rate / 100
+                s_rate = Decimal(savings_rate)
+                interest = (p.savings_balance * s_rate / Decimal(100)).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
                 await adjust_savings_balance(session, p, interest)
                 await create_transaction(
                     session,
@@ -196,7 +204,10 @@ async def apply_weekly_interest(course_id: int) -> None:
                     status="completed",
                 )
             if loan_rate and p.loan_balance > 0:
-                interest = float(p.loan_balance) * loan_rate / 100
+                l_rate = Decimal(loan_rate)
+                interest = (p.loan_balance * l_rate / Decimal(100)).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
                 await adjust_loan_balance(session, p, interest)
                 await create_transaction(
                     session,
