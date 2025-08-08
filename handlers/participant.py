@@ -157,7 +157,11 @@ async def process_withdraw(message: Message, state: FSMContext):
     await state.set_state(CashOperations.waiting_for_approval)
 
     await message.answer(
-        LEXICON["withdraw_waiting_approval"].format(amount=amount, tx_id=tx_id),
+        LEXICON["withdraw_waiting_approval"].format(
+            amount=amount,
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant_name),
         parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
@@ -226,7 +230,11 @@ async def process_deposit(message: Message, state: FSMContext):
     await state.set_state(CashOperations.waiting_for_approval)
 
     await message.answer(
-        LEXICON["deposit_waiting_approval"].format(amount=amount, tx_id=tx_id),
+        LEXICON["deposit_waiting_approval"].format(
+            amount=amount,
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant_name),
         parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
@@ -414,7 +422,7 @@ async def process_repay_loan(message: Message, state: FSMContext):
     F.data == "participant:cancel",
     StateFilter(CashOperations.waiting_for_approval)
 )
-async def user_cancel_withdraw(callback: CallbackQuery, state: FSMContext):
+async def user_cancel_cash_request(callback: CallbackQuery, state: FSMContext):
     """Allow user to cancel their own pending transaction."""
     data = await state.get_data()
     tx_id = data.pop("tx_id", None)
@@ -426,12 +434,17 @@ async def user_cancel_withdraw(callback: CallbackQuery, state: FSMContext):
 
     await state.set_state(None)
     await state.set_data(data)
-    text, kb = await build_participant_menu(pid, participant_name, course_name)
     await callback.message.edit_text(
-        LEXICON["withdraw_cancelled"],
-        parse_mode="HTML",
-        reply_markup=kb
+        LEXICON["cash_request_cancelled"].format(
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant_name),
+        parse_mode="HTML"
     )
+
+    text, kb = await build_participant_menu(pid, participant_name, course_name)
+    await callback.bot.send_message(callback.from_user.id, text, parse_mode="HTML", reply_markup=kb)
+
     await callback.answer()
 
 

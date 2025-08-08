@@ -156,21 +156,32 @@ async def admin_tx_approve(callback: CallbackQuery):
 
     # Notify the participant
     if tx.type == "cash_deposit":
-        text = LEXICON["deposit_approved"].format(amount=tx.amount, tx_id=tx_id)
+        text = LEXICON["deposit_approved"].format(
+            amount=tx.amount,
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)
     else:
-        text = LEXICON["withdraw_approved"].format(amount=tx.amount,tx_id=tx_id)
-    await callback.bot.send_message(participant.telegram_id, text)
+        text = LEXICON["withdraw_approved"].format(
+            amount=tx.amount,
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)
+    await callback.bot.send_message(participant.telegram_id, text, parse_mode="HTML",)
 
     # Build the participant menu and send it
     menu_text, menu_kb = await build_participant_menu(
         participant.id, participant.name, course_name
     )
-    await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
+    await callback.bot.send_message(participant.telegram_id, menu_text, parse_mode="HTML", reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
     await callback.message.edit_text(
         f"{callback.message.text}\n\n"
-        f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id)}",
+        f"{LEXICON['admin_tx_approved_admin'].format(
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)}",
         parse_mode="HTML",
         reply_markup=None
     )
@@ -195,21 +206,32 @@ async def admin_tx_decline(callback: CallbackQuery):
 
     # Notify the participant
     if tx.type == "cash_deposit":
-        text = LEXICON["deposit_declined"].format(amount=tx.amount, tx_id=tx_id)
+        text = LEXICON["deposit_declined"].format(
+            amount=tx.amount,
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)
     else:
-        text = LEXICON["withdraw_declined"].format(amount=tx.amount, tx_id=tx_id)
-    await callback.bot.send_message(participant.telegram_id, text)
+        text = LEXICON["withdraw_declined"].format(
+            amount=tx.amount,
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)
+    await callback.bot.send_message(participant.telegram_id, text, parse_mode="HTML")
 
     # Build the participant menu and send it
     menu_text, menu_kb = await build_participant_menu(
         participant.id, participant.name, course_name
     )
-    await callback.bot.send_message(participant.telegram_id, menu_text, reply_markup=menu_kb)
+    await callback.bot.send_message(participant.telegram_id, menu_text, parse_mode="HTML", reply_markup=menu_kb)
 
     # Mark the admin’s notification as handled
     await callback.message.edit_text(
         f"{callback.message.text}\n\n"
-        f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id)}",
+        f"{LEXICON['admin_tx_approved_admin'].format(
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)}",
         parse_mode="HTML",
         reply_markup=None
     )

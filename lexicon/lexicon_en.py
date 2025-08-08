@@ -77,13 +77,13 @@ LEXICON = {
         "📝 Description: {description}\n"
         "🗓 Created: {created_at:%d.%m.%Y}\n"
         "{course_status_emoji} Status: {status}\n\n"
-        "💹 Savings rate: {savings_rate}%\n"
-        "💸 Loan rate: {loan_rate}%\n"
-        "💳 Max loan: {max_loan}\n"
-        "⏳ Savings lock: {savings_delay} days\n\n"
+        "💹% Savings rate: {savings_rate}%\n"
+        "💸% Loan rate: {loan_rate}%\n"
+        "💳⬆️ Max loan: {max_loan}\n"
+        "💹⏳ Savings lock: {savings_delay} days\n\n"
         "👥 Total participants: {total}\n"
         "📝 Registered: {registered}\n"
-        "💰 Average balance: {avg_balance:.2f}"
+        "💳 Average balance: {avg_balance:.2f}"
     ),
 
     # Status Values
@@ -101,19 +101,17 @@ LEXICON = {
         "🏫 Course: {course_name}\n"
         "👤 {name}\n\n"
         "💳 Balance: {balance}\n"
-        "📥 Savings: {savings}\n"
-        "🤑 Loans: {loan}\n\n"
-        "📈 Savings rate: {savings_rate}%\n"
-        "💸 Loan rate: {loan_rate}%"
+        "💹 Savings: {savings} (rate: {savings_rate}%)\n"
+        "💸 Loans: {loan} (rate: {loan_rate}%)\n"
     ),  # Overview of participant balances
 
     # Inline Keyboard Buttons
     "button_withdraw_cash": "💳➔💰 Withdraw Cash",
     "button_deposit_cash": "💰➔💳 Deposit Cash",
-    "button_to_savings": "💳➔📥 To Savings",
-    "button_from_savings": "📥➔💳 From Savings",
-    "button_repay_loan": "💳➔🤑 Repay Loan",
-    "button_take_loan": "🤑➔💳 Take Loan",
+    "button_to_savings": "💳➔💹 To Savings",
+    "button_from_savings": "💹➔💳 From Savings",
+    "button_repay_loan": "💳➔💸 Repay Loan",
+    "button_take_loan": "💸➔💳 Take Loan",
     "button_cancel": "❌ Cancel",
 
     # endregion --- Participant Panel ---
@@ -139,29 +137,34 @@ LEXICON = {
     "savings_insufficient": "You don't have that much in savings.",
     "loan_limit_reached": "Loan limit is {limit} 🪙.",
 
-    "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",
-    "deposit_waiting_approval": "Your deposit request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",
+    "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.\n"
+                                 "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
+    "deposit_waiting_approval": "Your deposit request of {amount} 🪙 is pending operator approval.\n"
+                                "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
 
-    "withdraw_cancelled": "Your withdrawal request has been cancelled.",
-    "deposit_cancelled": "Your deposit request has been cancelled.",
+    "cash_request_cancelled": "Your request has been cancelled.\n<code>{course_name}, {name}, tx_id: {tx_id}</code>",
 
     # Buttons for admin to approve/decline
     "button_approve": "✅ Approve",
     "button_decline": "❌ Decline",
 
     # Admin notifications when user creates a request
-    "admin_withdraw_request": "<b>{course_name}</b>\n💳➔💰\n{name} requests withdrawal of {amount} 🪙\n(tx_id: {tx_id})",
-    "admin_deposit_request": "<b>{course_name}</b>\n💰➔💳\n{name} requests deposit of {amount} 🪙\n(tx_id: {tx_id})",
+    "admin_withdraw_request": "<b>🏫 {course_name}</b>\n💳➔💰\n👤 {name} requests withdrawal of {amount} 🪙\n(tx_id: {tx_id})",
+    "admin_deposit_request": "<b>🏫 {course_name}</b>\n💰➔💳\n👤 {name} requests deposit of {amount} 🪙\n(tx_id: {tx_id})",
 
     # Admin UI messages after handling
-    "admin_tx_approved_admin": "✅ Transaction (tx_id: {tx_id}) approved.",
-    "admin_tx_declined_admin": "❌ Transaction (tx_id: {tx_id}) declined.",
+    "admin_tx_approved_admin": "✅ Transaction approved.\n<code>{course_name}, {name}, tx_id: {tx_id}</code>",
+    "admin_tx_declined_admin": "❌ Transaction declined.\n<code>{course_name}, {name}, tx_id: {tx_id}</code>",
 
     # Participant notifications on approval/decline
-    "withdraw_approved": "✅ Your withdrawal of {amount} 🪙 has been approved.\n(tx_id: {tx_id})",
-    "withdraw_declined": "❌ Your withdrawal request of {amount} 🪙 has been declined.\n(tx_id: {tx_id})",
-    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your balance.\n(tx_id: {tx_id})",
-    "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.\n(tx_id: {tx_id})",
+    "withdraw_approved": "✅ Your withdrawal of {amount} 🪙 has been approved.\n"
+                         "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
+    "withdraw_declined": "❌ Your withdrawal request of {amount} 🪙 has been declined.\n"
+                         "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
+    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your balance.\n"
+                        "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
+    "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.\n"
+                        "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
 
     # region --- Withdraw and Deposit Flows ---
 
