@@ -1,5 +1,5 @@
 from _decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,7 +76,7 @@ async def adjust_savings_balance(
     """Move coins into (delta>0) or out (delta<0) of savings account, update timestamp."""
     participant.savings_balance += delta
     if delta > 0:
-        participant.last_savings_deposit_at = datetime.utcnow()
+        participant.last_savings_deposit_at = datetime.now(timezone.utc)
     await session.commit()
     await session.refresh(participant)
     return participant

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ async def create_transaction(
         type=tx_type,
         amount=amount,
         status=status,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     session.add(tx)
     await session.commit()
@@ -34,7 +34,7 @@ async def update_transaction_status(
 ) -> Transaction:
     """Approve or decline a pending transaction and set processed timestamp."""
     tx.status = new_status
-    tx.processed_at = datetime.utcnow()
+    tx.processed_at = datetime.now(timezone.utc)
     await session.commit()
     await session.refresh(tx)
     return tx

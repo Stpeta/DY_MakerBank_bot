@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
@@ -253,7 +253,7 @@ async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
     course_id = data.get("course_id")
     async with AsyncSessionLocal() as session:
         course = await session.get(Course, course_id)
-    unlock_time = datetime.utcnow() + timedelta(days=course.savings_withdrawal_delay)
+    unlock_time = datetime.now(timezone.utc) + timedelta(days=course.savings_withdrawal_delay)
     text = (
         LEXICON["to_savings_amount_request"]
         + "\n"
@@ -303,23 +303,6 @@ async def process_to_savings(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:from_savings")
 async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    data = await state.get_data()
-    pid = data.get("participant_id")
-    async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, pid)
-        course = await session.get(Course, participant.course_id)
-    last = participant.last_savings_deposit_at
-    if last and datetime.utcnow() - last < timedelta(days=course.savings_withdrawal_delay):
-        unlock_time = last + timedelta(days=course.savings_withdrawal_delay)
-        await callback.message.edit_text(
-            LEXICON["savings_locked_until"].format(unlock_time=unlock_time),
-            parse_mode="HTML",
-        )
-        text_menu, kb = await build_participant_menu(
-            pid, data.get("participant_name"), data.get("course_name")
-        )
-        await callback.message.answer(text_menu, parse_mode="HTML", reply_markup=kb)
-        return
     await callback.message.edit_text(
         LEXICON["from_savings_amount_request"],
         parse_mode="HTML",

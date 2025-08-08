@@ -133,9 +133,8 @@ LEXICON = {
     "savings_withdraw_success": "✅ {amount} 🪙 withdrawn from savings.",
     "loan_take_success": "✅ Loan of {amount} 🪙 issued.",
     "loan_repay_success": "✅ Loan repaid by {amount} 🪙.",
-    "savings_locked": "⏳ Savings are locked for {days} days after deposit.",
     "savings_locked_until": "⏳ Savings are locked until {unlock_time:%d.%m.%Y %H:%M UTC}.",
-    "savings_lock_warning": "⚠️ After deposit, funds cannot be withdrawn for {days} days (until {unlock_time:%d.%m.%Y %H:%M UTC}).",
+    "savings_lock_warning": "\n<i>⚠️ After deposit, funds cannot be withdrawn for {days} days (until {unlock_time:%d.%m.%Y %H:%M UTC}).</i>",
     "savings_insufficient": "You don't have that much in savings.",
     "loan_limit_reached": "Loan limit is {limit} 🪙.",
 

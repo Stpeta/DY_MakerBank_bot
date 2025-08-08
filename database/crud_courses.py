@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TypedDict
 
 from sqlalchemy import select, desc, func, case
@@ -67,7 +67,7 @@ async def finish_course(
 ) -> Course:
     """Mark course as finished and set finish_date."""
     course.is_active = False
-    course.finish_date = datetime.utcnow()
+    course.finish_date = datetime.now(timezone.utc)
     await session.commit()
     await session.refresh(course)
     return course
@@ -120,7 +120,7 @@ async def set_rate(
         course_id=course_id,
         kind=kind,
         rate=rate,
-        set_at=datetime.utcnow()
+        set_at=datetime.now(timezone.utc)
     )
     session.add(entry)
     await session.commit()

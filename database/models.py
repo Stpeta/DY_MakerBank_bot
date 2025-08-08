@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column, Integer, BigInteger, String,
@@ -17,7 +17,7 @@ class Course(Base):
     description = Column(String, nullable=True)
     sheet_url = Column(String, nullable=True)
     creator_id = Column(BigInteger, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     is_active = Column(Boolean, default=True)
     finish_date = Column(DateTime, nullable=True)
 
@@ -48,7 +48,7 @@ class Participant(Base):
     loan_balance = Column(Numeric(8, 2), default=0)
 
     # timestamp of last deposit to savings to enforce withdrawal delay
-    last_savings_deposit_at = Column(DateTime, nullable=True)
+    last_savings_deposit_at = Column(DateTime(timezone=True), nullable=True)
 
     course = relationship("Course", back_populates="participants")
     transactions = relationship("Transaction", back_populates="participant")
@@ -62,7 +62,7 @@ class RateHistory(Base):
     course_id = Column(Integer, ForeignKey("courses.id"), index=True, nullable=False)
     kind = Column(Enum("savings", "loan", name="rate_kind"), nullable=False)  # 'savings' or 'loan'
     rate = Column(Numeric(5, 2), nullable=False)  # weekly interest rate as percentage
-    set_at = Column(DateTime, default=datetime.utcnow)  # timestamp when rate was set
+    set_at = Column(DateTime, default=datetime.now(timezone.utc))  # timestamp when rate was set
 
 
 # Table to record all financial transactions and status
@@ -88,7 +88,7 @@ class Transaction(Base):
         name="tx_status"
     ), default="pending", nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     processed_at = Column(DateTime, nullable=True)
 
     participant = relationship("Participant", back_populates="transactions")
