@@ -15,7 +15,7 @@ from aiogram.types import (
 from database.base import AsyncSessionLocal
 from database.crud_transactions import update_transaction_status
 from database.crud_participant import adjust_participant_balance
-from database.crud_courses import finish_course, get_course_stats
+from database.crud_courses import finish_course, get_course_stats, get_current_rate
 from database.models import Course, Transaction, Participant
 from filters.role_filter import RoleFilter
 from keyboards.admin import course_actions_kb
@@ -25,6 +25,8 @@ from services.course_creation_flow import (
     start_course_flow,
     process_course_name,
     process_course_description,
+    process_savings_rate,
+    process_loan_rate,
     process_course_sheet,
 )
 from services.participant_menu import build_participant_menu
@@ -49,8 +51,10 @@ async def admin_course_info(callback: CallbackQuery):
     async with AsyncSessionLocal() as session:
         course = await session.get(Course, int(course_id))
         stats = await get_course_stats(session, course.id)
+        savings_rate = await get_current_rate(session, course.id, "savings")
+        loan_rate = await get_current_rate(session, course.id, "loan")
 
-    text = render_course_info(course, stats)
+    text = render_course_info(course, stats, savings_rate, loan_rate)
 
     if course.is_active:
         kb = course_actions_kb(course.id)
@@ -106,6 +110,16 @@ async def handle_course_name(message: Message, state: FSMContext):
 @admin_router.message(StateFilter(CourseCreation.waiting_for_description))
 async def handle_course_description(message: Message, state: FSMContext):
     await process_course_description(message, state)
+
+
+@admin_router.message(StateFilter(CourseCreation.waiting_for_savings_rate))
+async def handle_course_savings_rate(message: Message, state: FSMContext):
+    await process_savings_rate(message, state)
+
+
+@admin_router.message(StateFilter(CourseCreation.waiting_for_loan_rate))
+async def handle_course_loan_rate(message: Message, state: FSMContext):
+    await process_loan_rate(message, state)
 
 
 @admin_router.message(StateFilter(CourseCreation.waiting_for_sheet))

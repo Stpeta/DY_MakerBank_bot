@@ -1,6 +1,6 @@
 # services/course_service.py
 
-from database.crud_courses import create_course, add_participants
+from database.crud_courses import create_course, add_participants, set_rate
 from services.utils import gen_registration_code
 from database.base import AsyncSessionLocal
 from database.models import Participant, Course
@@ -13,6 +13,8 @@ async def create_course_with_participants(
         creator_id: int,
         sheet_url: str,
         participants_raw: list[tuple[str, str]],
+        savings_rate: float,
+        loan_rate: float,
 ) -> tuple[Course, dict[str, str]]:
     """
     1) Берёт сырые данные [(name,email),…] из Google Sheet
@@ -45,5 +47,7 @@ async def create_course_with_participants(
             sheet_url=sheet_url
         )
         await add_participants(session, course.id, participants)
+        await set_rate(session, course.id, "savings", savings_rate)
+        await set_rate(session, course.id, "loan", loan_rate)
 
     return course, codes_map

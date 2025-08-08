@@ -19,6 +19,10 @@ from services.banking import (
     create_withdrawal_request,
     create_deposit_request,
     cancel_transaction,
+    move_to_savings,
+    withdraw_from_savings,
+    take_loan,
+    repay_loan,
 )
 from services.notifications import send_message_to_course_creator
 from services.participant_menu import build_participant_menu
@@ -230,6 +234,180 @@ async def process_deposit(message: Message, state: FSMContext):
 
 # endregion --- Deposit Flow ---
 
+# region --- Savings Flow ---
+
+@participant_router.callback_query(F.data == "participant:to_savings")
+async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.edit_text(
+        LEXICON["to_savings_amount_request"],
+        parse_mode="HTML",
+        reply_markup=cancel_operation_kb(),
+    )
+    await state.set_state(CashOperations.waiting_for_savings_deposit_amount)
+
+
+@participant_router.message(StateFilter(CashOperations.waiting_for_savings_deposit_amount))
+async def process_to_savings(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text.isdigit() or int(text) <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    amount = int(text)
+    data = await state.get_data()
+    pid = data.get("participant_id")
+    try:
+        await move_to_savings(pid, amount)
+    except ValueError as e:
+        return await message.answer(
+            str(e),
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    await state.set_state(None)
+    text_menu, kb = await build_participant_menu(
+        pid, data.get("participant_name"), data.get("course_name")
+    )
+    await message.answer(
+        LEXICON["savings_deposit_success"].format(amount=amount),
+        parse_mode="HTML",
+        reply_markup=kb,
+    )
+
+
+@participant_router.callback_query(F.data == "participant:from_savings")
+async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.edit_text(
+        LEXICON["from_savings_amount_request"],
+        parse_mode="HTML",
+        reply_markup=cancel_operation_kb(),
+    )
+    await state.set_state(CashOperations.waiting_for_savings_withdraw_amount)
+
+
+@participant_router.message(StateFilter(CashOperations.waiting_for_savings_withdraw_amount))
+async def process_from_savings(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text.isdigit() or int(text) <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    amount = int(text)
+    data = await state.get_data()
+    pid = data.get("participant_id")
+    try:
+        await withdraw_from_savings(pid, amount)
+    except ValueError as e:
+        return await message.answer(
+            str(e),
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    await state.set_state(None)
+    text_menu, kb = await build_participant_menu(
+        pid, data.get("participant_name"), data.get("course_name")
+    )
+    await message.answer(
+        LEXICON["savings_withdraw_success"].format(amount=amount),
+        parse_mode="HTML",
+        reply_markup=kb,
+    )
+
+# endregion --- Savings Flow ---
+
+# region --- Loan Flow ---
+
+@participant_router.callback_query(F.data == "participant:take_loan")
+async def ask_take_loan(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.edit_text(
+        LEXICON["take_loan_amount_request"],
+        parse_mode="HTML",
+        reply_markup=cancel_operation_kb(),
+    )
+    await state.set_state(CashOperations.waiting_for_take_loan_amount)
+
+
+@participant_router.message(StateFilter(CashOperations.waiting_for_take_loan_amount))
+async def process_take_loan(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text.isdigit() or int(text) <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    amount = int(text)
+    data = await state.get_data()
+    pid = data.get("participant_id")
+    try:
+        await take_loan(pid, amount)
+    except ValueError as e:
+        return await message.answer(
+            str(e),
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    await state.set_state(None)
+    text_menu, kb = await build_participant_menu(
+        pid, data.get("participant_name"), data.get("course_name")
+    )
+    await message.answer(
+        LEXICON["loan_take_success"].format(amount=amount),
+        parse_mode="HTML",
+        reply_markup=kb,
+    )
+
+
+@participant_router.callback_query(F.data == "participant:repay_loan")
+async def ask_repay_loan(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.edit_text(
+        LEXICON["repay_loan_amount_request"],
+        parse_mode="HTML",
+        reply_markup=cancel_operation_kb(),
+    )
+    await state.set_state(CashOperations.waiting_for_repay_loan_amount)
+
+
+@participant_router.message(StateFilter(CashOperations.waiting_for_repay_loan_amount))
+async def process_repay_loan(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text.isdigit() or int(text) <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    amount = int(text)
+    data = await state.get_data()
+    pid = data.get("participant_id")
+    try:
+        await repay_loan(pid, amount)
+    except ValueError as e:
+        return await message.answer(
+            str(e),
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    await state.set_state(None)
+    text_menu, kb = await build_participant_menu(
+        pid, data.get("participant_name"), data.get("course_name")
+    )
+    await message.answer(
+        LEXICON["loan_repay_success"].format(amount=amount),
+        parse_mode="HTML",
+        reply_markup=kb,
+    )
+
+# endregion --- Loan Flow ---
+
 # region --- Withdraw/Deposit Cancellation ---
 
 @participant_router.callback_query(
@@ -259,25 +437,17 @@ async def user_cancel_withdraw(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.callback_query(
     F.data == "participant:cancel",
-    StateFilter(CashOperations.waiting_for_withdraw_amount)
+    StateFilter(
+        CashOperations.waiting_for_withdraw_amount,
+        CashOperations.waiting_for_deposit_amount,
+        CashOperations.waiting_for_savings_deposit_amount,
+        CashOperations.waiting_for_savings_withdraw_amount,
+        CashOperations.waiting_for_take_loan_amount,
+        CashOperations.waiting_for_repay_loan_amount,
+    ),
 )
-async def cancel_during_withdraw(callback: CallbackQuery, state: FSMContext):
-    """Cancel withdrawal before submitting amount."""
-    await callback.answer()  # remove loading
-    data = await state.get_data()
-    await state.set_state(None)
-    text, kb = await build_participant_menu(
-        data.get("participant_id"), data.get("participant_name"), data.get("course_name")
-    )
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
-
-
-@participant_router.callback_query(
-    F.data == "participant:cancel",
-    StateFilter(CashOperations.waiting_for_deposit_amount)
-)
-async def cancel_during_deposit(callback: CallbackQuery, state: FSMContext):
-    """Cancel deposit before submitting amount."""
+async def cancel_during_input(callback: CallbackQuery, state: FSMContext):
+    """Cancel any operation before submitting amount."""
     await callback.answer()
     data = await state.get_data()
     await state.set_state(None)

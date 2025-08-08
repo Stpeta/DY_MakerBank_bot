@@ -13,6 +13,9 @@ LEXICON = {
     # Prompts for creating a new course
     "course_name_request": "Enter the name of the new course:",  # Ask admin for course title
     "course_description_request": "Enter the description of the course:",  # Ask admin for course description
+    "course_savings_rate_request": "Enter weekly savings interest rate (%)",
+    "course_loan_rate_request": "Enter weekly loan interest rate (%)",
+    "course_rate_invalid": "Please enter a valid percentage.",
     "course_sheet_request": "Please send the Google Sheets link containing the list of participants:",
     # Ask for sheet URL
 
@@ -74,6 +77,10 @@ LEXICON = {
         "📝 Description: {description}\n"
         "🗓 Created: {created_at:%d.%m.%Y}\n"
         "{course_status_emoji} Status: {status}\n\n"
+        "💹 Savings rate: {savings_rate}%\n"
+        "💸 Loan rate: {loan_rate}%\n"
+        "💳 Max loan: {max_loan}\n"
+        "⏳ Savings lock: {savings_delay} days\n\n"
         "👥 Total participants: {total}\n"
         "📝 Registered: {registered}\n"
         "💰 Average balance: {avg_balance:.2f}"
@@ -95,7 +102,9 @@ LEXICON = {
         "👤 {name}\n\n"
         "💳 Balance: {balance}\n"
         "📥 Savings: {savings}\n"
-        "🤑 Loans: {loan}"
+        "🤑 Loans: {loan}\n\n"
+        "📈 Savings rate: {savings_rate}%\n"
+        "💸 Loan rate: {loan_rate}%"
     ),  # Overview of participant balances
 
     # Inline Keyboard Buttons
@@ -116,6 +125,19 @@ LEXICON = {
 
     "invalid_amount": "Please enter a valid positive number.",
     "insufficient_funds": "You have insufficient funds.\nEnter the amount to withdraw 🪙:",
+
+    # Savings and loans operations
+    "to_savings_amount_request": "Enter amount to transfer to savings 🪙:",
+    "from_savings_amount_request": "Enter amount to withdraw from savings 🪙:",
+    "take_loan_amount_request": "Enter loan amount 🪙:",
+    "repay_loan_amount_request": "Enter amount to repay 🪙:",
+    "savings_deposit_success": "✅ {amount} 🪙 moved to savings.",
+    "savings_withdraw_success": "✅ {amount} 🪙 withdrawn from savings.",
+    "loan_take_success": "✅ Loan of {amount} 🪙 issued.",
+    "loan_repay_success": "✅ Loan repaid by {amount} 🪙.",
+    "savings_locked": "⏳ Savings are locked for {days} days after deposit.",
+    "savings_insufficient": "You don't have that much in savings.",
+    "loan_limit_reached": "Loan limit is {limit} 🪙.",
 
     "withdraw_waiting_approval": "Your withdrawal request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",
     "deposit_waiting_approval": "Your deposit request of {amount} 🪙 is pending operator approval.\n(tx_id: {tx_id})",

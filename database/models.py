@@ -21,6 +21,12 @@ class Course(Base):
     is_active = Column(Boolean, default=True)
     finish_date = Column(DateTime, nullable=True)
 
+    # Course-wide financial settings
+    max_loan_amount = Column(Numeric(8, 2), default=100)  # maximum total loan per participant
+    savings_withdrawal_delay = Column(Integer, default=7)  # days lock after deposit
+    interest_day = Column(Integer, default=0)  # 0=Monday ... 6=Sunday
+    interest_time = Column(String, default="09:00")  # HH:MM in UTC
+
     # Relationship to participants
     participants = relationship("Participant", back_populates="course")
 
@@ -40,6 +46,9 @@ class Participant(Base):
     balance = Column(Numeric(8, 2), default=0)
     savings_balance = Column(Numeric(8, 2), default=0)
     loan_balance = Column(Numeric(8, 2), default=0)
+
+    # timestamp of last deposit to savings to enforce withdrawal delay
+    last_savings_deposit_at = Column(DateTime, nullable=True)
 
     course = relationship("Course", back_populates="participants")
     transactions = relationship("Transaction", back_populates="participant")

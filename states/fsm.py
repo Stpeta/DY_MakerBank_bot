@@ -3,6 +3,8 @@ from aiogram.fsm.state import StatesGroup, State
 class CourseCreation(StatesGroup):
     waiting_for_name = State()
     waiting_for_description = State()
+    waiting_for_savings_rate = State()
+    waiting_for_loan_rate = State()
     waiting_for_sheet = State()
 
 class Registration(StatesGroup):
@@ -14,4 +16,8 @@ class CourseFinish(StatesGroup):
 class CashOperations(StatesGroup):
     waiting_for_withdraw_amount = State()
     waiting_for_deposit_amount = State()
+    waiting_for_savings_deposit_amount = State()
+    waiting_for_savings_withdraw_amount = State()
+    waiting_for_take_loan_amount = State()
+    waiting_for_repay_loan_amount = State()
     waiting_for_approval = State()

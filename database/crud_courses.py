@@ -12,14 +12,22 @@ async def create_course(
         name: str,
         description: str,
         creator_id: int,
-        sheet_url: str | None = None
+        sheet_url: str | None = None,
+        max_loan_amount: float = 100,
+        savings_withdrawal_delay: int = 7,
+        interest_day: int = 0,
+        interest_time: str = "09:00",
 ) -> Course:
     """Create and commit a new course record."""
     course = Course(
         name=name,
         description=description,
         sheet_url=sheet_url,
-        creator_id=creator_id
+        creator_id=creator_id,
+        max_loan_amount=max_loan_amount,
+        savings_withdrawal_delay=savings_withdrawal_delay,
+        interest_day=interest_day,
+        interest_time=interest_time,
     )
     session.add(course)
     await session.commit()

@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardMarkup
 
 from database.base import AsyncSessionLocal
 from database.models import Participant
+from database.crud_courses import get_current_rate
 
 from keyboards.participant import main_menu_participant_kb
 
@@ -23,13 +24,17 @@ async def build_participant_menu(
         balance = participant.balance
         savings = participant.savings_balance
         loan = participant.loan_balance
+        savings_rate = await get_current_rate(session, participant.course_id, "savings")
+        loan_rate = await get_current_rate(session, participant.course_id, "loan")
 
     text = LEXICON["main_balance_text"].format(
         name=participant_name,
         course_name=course_name,
         balance=balance,
         savings=savings,
-        loan=loan
+        loan=loan,
+        savings_rate=savings_rate,
+        loan_rate=loan_rate
     )
     kb = main_menu_participant_kb()
     return text, kb
