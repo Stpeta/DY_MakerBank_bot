@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone, timedelta
+from _decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
 from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
@@ -272,13 +273,21 @@ async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_deposit_amount))
 async def process_to_savings(message: Message, state: FSMContext):
     text = message.text.strip()
-    if not text.isdigit() or int(text) <= 0:
+    try:
+        amount = Decimal(text)
+    except (InvalidOperation, ValueError):
         return await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
-    amount = int(text)
+    amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amount <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
@@ -314,13 +323,21 @@ async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_withdraw_amount))
 async def process_from_savings(message: Message, state: FSMContext):
     text = message.text.strip()
-    if not text.isdigit() or int(text) <= 0:
+    try:
+        amount = Decimal(text)
+    except (InvalidOperation, ValueError):
         return await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
-    amount = int(text)
+    amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amount <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
@@ -359,13 +376,21 @@ async def ask_take_loan(callback: CallbackQuery, state: FSMContext):
 @participant_router.message(StateFilter(CashOperations.waiting_for_take_loan_amount))
 async def process_take_loan(message: Message, state: FSMContext):
     text = message.text.strip()
-    if not text.isdigit() or int(text) <= 0:
+    try:
+        amount = Decimal(text)
+    except (InvalidOperation, ValueError):
         return await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
-    amount = int(text)
+    amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amount <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
@@ -401,13 +426,21 @@ async def ask_repay_loan(callback: CallbackQuery, state: FSMContext):
 @participant_router.message(StateFilter(CashOperations.waiting_for_repay_loan_amount))
 async def process_repay_loan(message: Message, state: FSMContext):
     text = message.text.strip()
-    if not text.isdigit() or int(text) <= 0:
+    try:
+        amount = Decimal(text)
+    except (InvalidOperation, ValueError):
         return await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
-    amount = int(text)
+    amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amount <= 0:
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
     data = await state.get_data()
     pid = data.get("participant_id")
     try:

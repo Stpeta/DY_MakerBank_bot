@@ -71,11 +71,15 @@ async def adjust_participant_balance(
 async def adjust_savings_balance(
         session: AsyncSession,
         participant: Participant,
-        delta: float
+        delta: float | Decimal
 ) -> Participant:
     """Move coins into (delta>0) or out (delta<0) of savings account, update timestamp."""
-    participant.savings_balance += delta
-    if delta > 0:
+    change = Decimal(delta)
+    new_balance = (participant.savings_balance + change).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    participant.savings_balance = new_balance
+    if change > 0:
         participant.last_savings_deposit_at = datetime.utcnow()
     await session.commit()
     await session.refresh(participant)
@@ -85,10 +89,14 @@ async def adjust_savings_balance(
 async def adjust_loan_balance(
         session: AsyncSession,
         participant: Participant,
-        delta: float
+        delta: float | Decimal
 ) -> Participant:
     """Issue (delta>0) or repay (delta<0) a loan."""
-    participant.loan_balance += delta
+    change = Decimal(delta)
+    new_balance = (participant.loan_balance + change).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    participant.loan_balance = new_balance
     await session.commit()
     await session.refresh(participant)
     return participant
