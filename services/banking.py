@@ -1,7 +1,7 @@
 # services/banking.py
 
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
@@ -115,7 +115,7 @@ async def withdraw_from_savings(participant_id: int, amount: int) -> None:
         if amount > participant.savings_balance:
             raise ValueError(LEXICON["savings_insufficient"])
         last = participant.last_savings_deposit_at
-        if last and datetime.now(timezone.utc) - last < timedelta(days=course.savings_withdrawal_delay):
+        if last and datetime.utcnow() - last < timedelta(days=course.savings_withdrawal_delay):
             unlock_time = last + timedelta(days=course.savings_withdrawal_delay)
             raise ValueError(LEXICON["savings_locked_until"].format(unlock_time=unlock_time))
 
