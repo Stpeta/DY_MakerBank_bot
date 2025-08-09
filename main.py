@@ -8,6 +8,7 @@ from handlers.common import common_router
 from handlers.registration import registration_router
 from handlers.participant import participant_router
 from keyboards.main_menu import get_main_menu_commands
+from services.scheduler import interest_scheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,7 +39,10 @@ async def main() -> None:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created or already exist.")
 
-    # 5) Старт polling
+    # 5) Запуск периодического начисления процентов
+    asyncio.create_task(interest_scheduler())
+
+    # 6) Старт polling
     await dp.start_polling(bot)
 
 
