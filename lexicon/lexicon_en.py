@@ -173,6 +173,7 @@ LEXICON = {
     # Admin UI messages after handling
     "admin_tx_approved_admin": "✅ Transaction approved.\n<code>{course_name}, {name}, tx_id: {tx_id}</code>",
     "admin_tx_declined_admin": "❌ Transaction declined.\n<code>{course_name}, {name}, tx_id: {tx_id}</code>",
+    "admin_tx_cancelled_admin": "🚫 Transaction canceled by participant.\n<code>{course_name}, {name}, tx_id: {tx_id}</code>",
 
     # Participant notifications on approval/decline
     "withdraw_approved": "✅ Your withdrawal of {amount} 🪙 has been approved.\n"
