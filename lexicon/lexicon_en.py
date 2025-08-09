@@ -48,6 +48,8 @@ LEXICON = {
     "registration_success": "✅ You have been registered as {name}! Welcome.\n\n"
                             "Now you can use /start to access your banking menu.",  # Success
 
+    "operation_in_progress": "⚠️ Please finish the current operation before starting another one.",
+
     # endregion --- Participant Registration ---
 
     # region --- Admin Panel ---

@@ -37,7 +37,7 @@ participant_router.message.filter(RoleFilter("participant"))
 participant_router.callback_query.filter(RoleFilter("participant"))
 
 
-@participant_router.message(Command("start"))
+@participant_router.message(Command("start"), StateFilter(None))
 async def participant_main(message: Message, state: FSMContext):
     """Entry point for participant. Select course if needed."""
     await state.clear()
@@ -75,6 +75,12 @@ async def participant_main(message: Message, state: FSMContext):
             LEXICON["choose_course_prompt"],
             reply_markup=select_course_kb(courses),
         )
+
+
+@participant_router.message(Command("start"), ~StateFilter(None))
+async def participant_busy(message: Message):
+    """Warn participant to finish current operation before using /start."""
+    await message.answer(LEXICON["operation_in_progress"], parse_mode="HTML")
 
 
 @participant_router.callback_query(F.data.startswith("participant:choose_course:"))

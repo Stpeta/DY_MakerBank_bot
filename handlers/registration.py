@@ -12,18 +12,30 @@ from states.fsm import Registration
 registration_router = Router()
 
 
-@registration_router.message(Command("start"), RoleFilter("guest"))
+@registration_router.message(Command("start"), RoleFilter("guest"), StateFilter(None))
 async def cmd_start(message: Message, state: FSMContext):
     """Start registration for guests via /start."""
     await message.answer(LEXICON["registration_code_request"], parse_mode="HTML")
     await state.set_state(Registration.waiting_for_code)
 
 
-@registration_router.message(Command("register"), RoleFilter("participant"))
+@registration_router.message(Command("register"), RoleFilter("participant"), StateFilter(None))
 async def cmd_register(message: Message, state: FSMContext):
     """Allow existing participants to re-register using /register."""
     await message.answer(LEXICON["registration_code_request"], parse_mode="HTML")
     await state.set_state(Registration.waiting_for_code)
+
+
+@registration_router.message(Command("start"), RoleFilter("guest"), ~StateFilter(None))
+async def start_busy(message: Message):
+    """Warn guest to complete current operation before restarting registration."""
+    await message.answer(LEXICON["operation_in_progress"], parse_mode="HTML")
+
+
+@registration_router.message(Command("register"), RoleFilter("participant"), ~StateFilter(None))
+async def register_busy(message: Message):
+    """Warn participant to complete current operation before re-registering."""
+    await message.answer(LEXICON["operation_in_progress"], parse_mode="HTML")
 
 
 @registration_router.message(StateFilter(Registration.waiting_for_code))
