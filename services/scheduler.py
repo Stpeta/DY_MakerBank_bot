@@ -9,7 +9,7 @@ from database.models import Course, Participant, Transaction
 from services.banking import apply_weekly_interest
 
 
-async def interest_scheduler(bot: Bot, poll_interval: int = 60) -> None:
+async def interest_scheduler(bot: Bot, poll_interval: int = 300) -> None:
     """Periodically apply weekly interest for courses on scheduled day/time."""
     while True:
         now = datetime.utcnow()

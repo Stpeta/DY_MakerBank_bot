@@ -32,14 +32,14 @@ async def send_message_to_participant(
 ) -> None:
     """
     Lookup a participant by database ID and send them a message.
-    Assumes Participant.chat_id stores the correct chat_id.
+    Assumes Participant.telegram_id stores the correct telegram_id.
     """
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
-        if participant and participant.chat_id:
+        if participant and participant.telegram_id:
             await send_message_to_telegram_id(
                 bot,
-                participant.chat_id,
+                participant.telegram_id,
                 text,
                 reply_markup=reply_markup
             )
