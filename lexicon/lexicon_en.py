@@ -61,7 +61,7 @@ LEXICON = {
 
     # Main menu messages
     "admin_main_no_courses": (
-        "You have no courses.\n"
+        "You have no courses!\n"
         "To create a new one, click “➕ New Course”."
     ),
     "admin_main_has_courses": (
