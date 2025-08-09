@@ -79,7 +79,7 @@ LEXICON = {
     "button_edit_interest_time": "⏰ Interest time",
     "button_edit_savings_rate": "💹 Savings rate",
     "button_edit_loan_rate": "💸 Loan rate",
-    "button_edit_max_loan": "💳 Max loan",
+    "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
 
     # Emojis indicating course status
@@ -94,8 +94,8 @@ LEXICON = {
         "{course_status_emoji} Status: {status}\n\n"
         "💹 Savings rate: {savings_rate}%\n"
         "💸 Loan rate: {loan_rate}%\n"
-        "💳⬆️ Max loan: {max_loan}\n"
-        "💹⏳ Savings lock: {savings_delay} days\n"
+        "⬆️ Max loan: {max_loan}\n"
+        "⏳ Savings lock: {savings_delay} days\n"
         "📆 Interest payout: {interest_day} {interest_time} UTC\n\n"
         "👥 Total participants: {total}\n"
         "📝 Registered: {registered}\n"
@@ -117,8 +117,8 @@ LEXICON = {
         "🏫 Course: {course_name}\n"
         "👤 {name}\n\n"
         "💳 Balance: {balance}\n"
-        "💹 Savings: {savings} (rate: {savings_rate}%)\n"
-        "💸 Loans: {loan} (rate: {loan_rate}%)\n"
+        "💹 Savings: {savings} (rate: {savings_rate}% weekly)\n"
+        "💸 Loans: {loan} (rate: {loan_rate}% weekly)\n"
     ),  # Overview of participant balances
 
     # Inline Keyboard Buttons
