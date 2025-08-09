@@ -40,7 +40,7 @@ async def main() -> None:
     logger.info("Database tables created or already exist.")
 
     # 5) Запуск периодического начисления процентов
-    asyncio.create_task(interest_scheduler())
+    asyncio.create_task(interest_scheduler(bot))
 
     # 6) Старт polling
     await dp.start_polling(bot)

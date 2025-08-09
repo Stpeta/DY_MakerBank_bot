@@ -2,12 +2,14 @@ import asyncio
 from datetime import datetime, timedelta, time
 from sqlalchemy import select
 
+from aiogram import Bot
+
 from database.base import AsyncSessionLocal
 from database.models import Course, Participant, Transaction
 from services.banking import apply_weekly_interest
 
 
-async def interest_scheduler(poll_interval: int = 60) -> None:
+async def interest_scheduler(bot: Bot, poll_interval: int = 60) -> None:
     """Periodically apply weekly interest for courses on scheduled day/time."""
     while True:
         now = datetime.utcnow()
@@ -36,5 +38,5 @@ async def interest_scheduler(poll_interval: int = 60) -> None:
                     )
                     existing = await session.execute(stmt)
                     if existing.scalar_one_or_none() is None:
-                        await apply_weekly_interest(course.id)
+                        await apply_weekly_interest(course.id, bot)
         await asyncio.sleep(poll_interval)
