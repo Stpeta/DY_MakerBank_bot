@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime, timedelta, time
-from sqlalchemy import select
 
 from aiogram import Bot
+from sqlalchemy import select
 
 from database.base import AsyncSessionLocal
 from database.models import Course
@@ -25,6 +25,6 @@ async def interest_scheduler(bot: Bot, poll_interval: int = 300) -> None:
                 week_start = now.date() - timedelta(days=now.weekday())
                 interest_date = week_start + timedelta(days=course.interest_day)
                 scheduled_dt = datetime.combine(interest_date, time(hour, minute))
-                if now >= scheduled_dt and course.last_interest_at < scheduled_dt:
+                if now >= scheduled_dt > course.last_interest_at:
                     await apply_weekly_interest(course.id, bot)
         await asyncio.sleep(poll_interval)
