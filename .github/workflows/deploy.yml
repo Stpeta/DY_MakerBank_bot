@@ -30,8 +30,8 @@ jobs:
             printf "ADMIN_IDS=%s\n" "${{ secrets.ADMIN_IDS }}" >> .env
             
             
-            echo "${{ secrets.SERVICE_ACCOUNT_JSON }}" | base64 -decode > service_account.json
-            
+            echo "${{ secrets.SERVICE_ACCOUNT_JSON }}" | base64 -w 0 > service_account_base64
+            base64 -d service_account_base64 > service_account.json
             
             docker-compose up -d --build
           EOF
