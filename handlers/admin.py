@@ -1,7 +1,6 @@
 # handlers/admin.py
 
 import logging
-from datetime import datetime
 
 from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
@@ -16,12 +15,7 @@ from aiogram.types import (
 from database.base import AsyncSessionLocal
 from database.crud_transactions import update_transaction_status
 from database.crud_participant import adjust_participant_balance
-from database.crud_courses import (
-    finish_course,
-    get_course_stats,
-    get_current_rate,
-    set_rate,
-)
+from database.crud_courses import finish_course, get_course_stats, get_current_rate
 from database.models import Course, Transaction, Participant
 from filters.role_filter import RoleFilter
 from keyboards.admin import course_actions_kb
@@ -37,7 +31,7 @@ from services.course_creation_flow import (
 )
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info
-from states.fsm import CourseCreation, CourseEdit
+from states.fsm import CourseCreation
 
 logger = logging.getLogger(__name__)
 admin_router = Router()
@@ -93,190 +87,6 @@ async def admin_course_finish(callback: CallbackQuery):
     # после завершения возвращаем главное меню одним edit
     text, kb = await build_admin_menu(callback.from_user.id)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
- 
-
-# region --- Editing course parameters ---
-
-
-async def _send_course_info(message: Message, course_id: int) -> None:
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        stats = await get_course_stats(session, course.id)
-        savings_rate = await get_current_rate(session, course.id, "savings")
-        loan_rate = await get_current_rate(session, course.id, "loan")
-
-    text = render_course_info(course, stats, savings_rate, loan_rate)
-    if course.is_active:
-        kb = course_actions_kb(course.id)
-    else:
-        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(
-            text=LEXICON["button_back"], callback_data="admin:back_to_main")]])
-
-    await message.answer(text, reply_markup=kb)
-
-
-@admin_router.callback_query(F.data.startswith("admin:course:edit:"))
-async def admin_course_edit_start(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-    _, _, _, field, course_id = callback.data.split(":", 4)
-    prompts = {
-        "name": "course_name_request",
-        "description": "course_description_request",
-        "interest_day": "course_interest_day_request",
-        "interest_time": "course_interest_time_request",
-        "savings_rate": "course_savings_rate_request",
-        "loan_rate": "course_loan_rate_request",
-        "max_loan": "course_max_loan_request",
-        "savings_lock": "course_savings_lock_request",
-    }
-    states_map = {
-        "name": CourseEdit.waiting_for_name,
-        "description": CourseEdit.waiting_for_description,
-        "interest_day": CourseEdit.waiting_for_interest_day,
-        "interest_time": CourseEdit.waiting_for_interest_time,
-        "savings_rate": CourseEdit.waiting_for_savings_rate,
-        "loan_rate": CourseEdit.waiting_for_loan_rate,
-        "max_loan": CourseEdit.waiting_for_max_loan,
-        "savings_lock": CourseEdit.waiting_for_savings_lock,
-    }
-    if field not in prompts:
-        return
-    await state.update_data(course_id=int(course_id))
-    await callback.message.answer(LEXICON[prompts[field]], parse_mode="HTML")
-    await state.set_state(states_map[field])
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_name))
-async def edit_course_name(message: Message, state: FSMContext):
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.name = message.text.strip()
-        await session.commit()
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_description))
-async def edit_course_description(message: Message, state: FSMContext):
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.description = message.text.strip()
-        await session.commit()
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_interest_day))
-async def edit_course_interest_day(message: Message, state: FSMContext):
-    text = message.text.strip()
-    if not text.isdigit():
-        await message.answer(LEXICON["course_value_invalid"], parse_mode="HTML")
-        return
-    day = int(text)
-    if day < 0 or day > 6:
-        await message.answer(LEXICON["course_value_invalid"], parse_mode="HTML")
-        return
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.interest_day = day
-        await session.commit()
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_interest_time))
-async def edit_course_interest_time(message: Message, state: FSMContext):
-    text = message.text.strip()
-    try:
-        datetime.strptime(text, "%H:%M")
-    except ValueError:
-        await message.answer(LEXICON["course_value_invalid"], parse_mode="HTML")
-        return
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.interest_time = text
-        await session.commit()
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_savings_rate))
-async def edit_course_savings_rate(message: Message, state: FSMContext):
-    text = message.text.replace(",", ".").strip()
-    try:
-        rate = float(text)
-    except ValueError:
-        await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
-        return
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        await set_rate(session, course_id, "savings", rate)
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_loan_rate))
-async def edit_course_loan_rate(message: Message, state: FSMContext):
-    text = message.text.replace(",", ".").strip()
-    try:
-        rate = float(text)
-    except ValueError:
-        await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
-        return
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        await set_rate(session, course_id, "loan", rate)
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_max_loan))
-async def edit_course_max_loan(message: Message, state: FSMContext):
-    text = message.text.replace(",", ".").strip()
-    try:
-        amount = float(text)
-    except ValueError:
-        await message.answer(LEXICON["course_value_invalid"], parse_mode="HTML")
-        return
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.max_loan_amount = amount
-        await session.commit()
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-@admin_router.message(StateFilter(CourseEdit.waiting_for_savings_lock))
-async def edit_course_savings_lock(message: Message, state: FSMContext):
-    text = message.text.strip()
-    try:
-        days = int(text)
-    except ValueError:
-        await message.answer(LEXICON["course_value_invalid"], parse_mode="HTML")
-        return
-    data = await state.get_data()
-    course_id = data["course_id"]
-    async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.savings_withdrawal_delay = days
-        await session.commit()
-    await state.clear()
-    await _send_course_info(message, course_id)
-
-
-# endregion --- Editing course parameters ---
 
 
 # region --- FSM для /new_course ---
@@ -367,12 +177,13 @@ async def admin_tx_approve(callback: CallbackQuery):
 
     # Mark the admin’s notification as handled
     await callback.message.edit_text(
-        (
-            f"{callback.message.text}\n\n"
-            f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id, course_name=course_name, name=participant.name)}"
-        ),
+        f"{callback.message.text}\n\n"
+        f"{LEXICON['admin_tx_approved_admin'].format(
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)}",
         parse_mode="HTML",
-        reply_markup=None,
+        reply_markup=None
     )
 
 
@@ -416,13 +227,13 @@ async def admin_tx_decline(callback: CallbackQuery):
 
     # Mark the admin’s notification as handled
     await callback.message.edit_text(
-        (
-            f"{callback.message.text}\n\n"
-            f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id, course_name=course_name, name=participant.name)}"
-        ),
+        f"{callback.message.text}\n\n"
+        f"{LEXICON['admin_tx_declined_admin'].format(
+            tx_id=tx_id,
+            course_name=course_name,
+            name=participant.name)}",
         parse_mode="HTML",
-        reply_markup=None,
+        reply_markup=None
     )
 
 # endregion --- Approving/Declining Withdrawal/Deposit Requests ---
-

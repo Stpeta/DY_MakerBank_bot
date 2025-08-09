@@ -1,7 +1,6 @@
 import asyncio
 from database.base import engine, Base
 # Импортируйте здесь все модели, чтобы они были зарегистрированы в metadata
-from database.models import Course, Participant
 
 async def init_models():
     """

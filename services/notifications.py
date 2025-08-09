@@ -3,6 +3,7 @@
 from typing import Optional, Any
 
 from aiogram import Bot
+from aiogram.enums import ParseMode
 
 from database.base import AsyncSessionLocal
 from database.models import Participant, Course
@@ -20,6 +21,7 @@ async def send_message_to_telegram_id(
     await bot.send_message(
         chat_id=chat_id,
         text=text,
+        parse_mode=ParseMode.HTML,
         reply_markup=reply_markup
     )
 
