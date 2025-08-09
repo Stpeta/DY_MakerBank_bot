@@ -3,8 +3,7 @@
 from database.crud_courses import create_course, add_participants, set_rate
 from services.utils import gen_registration_code
 from database.base import AsyncSessionLocal
-from database.models import Participant, Course
-from sqlalchemy import select
+from database.models import Course
 
 
 async def create_course_with_participants(
