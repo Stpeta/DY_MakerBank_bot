@@ -1,3 +1,5 @@
+from calendar import day_name
+
 from lexicon.lexicon_en import LEXICON
 
 
@@ -36,4 +38,6 @@ def render_course_info(course, stats: dict, savings_rate: float, loan_rate: floa
         loan_rate=loan_rate,
         max_loan=course.max_loan_amount,
         savings_delay=course.savings_withdrawal_delay,
+        interest_day=day_name[course.interest_day],
+        interest_time=course.interest_time,
     )

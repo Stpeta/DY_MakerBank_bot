@@ -16,6 +16,11 @@ LEXICON = {
     "course_savings_rate_request": "Enter weekly savings interest rate (%)",
     "course_loan_rate_request": "Enter weekly loan interest rate (%)",
     "course_rate_invalid": "Please enter a valid percentage.",
+    "course_max_loan_request": "Enter maximum loan amount:",
+    "course_savings_lock_request": "Enter savings lock period (days):",
+    "course_interest_day_request": "Enter interest payout weekday (0=Monday ... 6=Sunday):",
+    "course_interest_time_request": "Enter interest payout time (HH:MM, UTC):",
+    "course_value_invalid": "Please enter a valid number.",
     "course_sheet_request": "Please send the Google Sheets link containing the list of participants:",
     # Ask for sheet URL
 
@@ -68,6 +73,14 @@ LEXICON = {
     "button_info": "ℹ️ About Bot",  # Show bot info
     "button_finish_course": "🛑 Finish Course",  # End a course
     "button_back": "↩️ Back",  # Navigate back
+    "button_edit_name": "✏️ Title",
+    "button_edit_description": "✏️ Description",
+    "button_edit_interest_day": "📅 Interest day",
+    "button_edit_interest_time": "⏰ Interest time",
+    "button_edit_savings_rate": "💹 Savings rate",
+    "button_edit_loan_rate": "💸 Loan rate",
+    "button_edit_max_loan": "💳 Max loan",
+    "button_edit_savings_lock": "⏳ Savings lock",
 
     # Emojis indicating course status
     "emoji_active": "🟢",  # Active course
@@ -82,7 +95,8 @@ LEXICON = {
         "💹% Savings rate: {savings_rate}%\n"
         "💸% Loan rate: {loan_rate}%\n"
         "💳⬆️ Max loan: {max_loan}\n"
-        "💹⏳ Savings lock: {savings_delay} days\n\n"
+        "💹⏳ Savings lock: {savings_delay} days\n"
+        "📆 Interest payout: {interest_day} {interest_time} UTC\n\n"
         "👥 Total participants: {total}\n"
         "📝 Registered: {registered}\n"
         "💳 Average balance: {avg_balance:.2f}"
