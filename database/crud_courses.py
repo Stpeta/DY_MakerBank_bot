@@ -28,6 +28,7 @@ async def create_course(
         savings_withdrawal_delay=savings_withdrawal_delay,
         interest_day=interest_day,
         interest_time=interest_time,
+        last_interest_at=datetime.utcnow(),
     )
     session.add(course)
     await session.commit()

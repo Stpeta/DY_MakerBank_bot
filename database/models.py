@@ -20,6 +20,7 @@ class Course(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
     finish_date = Column(DateTime, nullable=True)
+    last_interest_at = Column(DateTime, default=datetime.utcnow)
 
     # Course-wide financial settings
     max_loan_amount = Column(Numeric(8, 2), default=100)  # maximum total loan per participant

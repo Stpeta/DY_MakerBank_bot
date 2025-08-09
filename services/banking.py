@@ -253,6 +253,9 @@ async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
                     )
                 await send_message_to_participant(bot, p.id, "\n".join(messages))
 
+        course.last_interest_at = datetime.utcnow()
+        await session.commit()
+
         if bot and course:
             stats_text = LEXICON["interest_admin_stats"].format(
                 course_name=course.name,
