@@ -482,8 +482,19 @@ async def user_cancel_cash_request(callback: CallbackQuery, state: FSMContext):
     pid = data.get("participant_id")
     participant_name = data.get("participant_name")
     course_name = data.get("course_name")
+    course_id = data.get("course_id")
     if tx_id and pid:
         await cancel_transaction(pid, tx_id)
+        if course_id:
+            await send_message_to_course_creator(
+                bot=callback.bot,
+                course_id=course_id,
+                text=LEXICON["admin_tx_cancelled_admin"].format(
+                    course_name=course_name,
+                    name=participant_name,
+                    tx_id=tx_id,
+                ),
+            )
 
     await state.set_state(None)
     await state.set_data(data)
