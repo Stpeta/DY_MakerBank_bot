@@ -168,6 +168,15 @@ LEXICON = {
     "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.\n"
                         "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
 
+    # Interest accrual notifications
+    "interest_savings": "✅ {amount} 🪙 interest added to your savings in {course_name}.",
+    "interest_loan": "⚠️ {amount} 🪙 interest added to your loan in {course_name}.",
+    "interest_admin_stats": (
+        "Weekly interest applied for {course_name}:\n"
+        "Savings: {s_count} participants, total {s_total} 🪙\n"
+        "Loan: {l_count} participants, total {l_total} 🪙"
+    ),
+
     # region --- Withdraw and Deposit Flows ---
 
 }

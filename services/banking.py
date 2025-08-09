@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from _decimal import Decimal, ROUND_HALF_UP
 
+from aiogram import Bot
 from sqlalchemy import select
 
 from database.base import AsyncSessionLocal
@@ -16,6 +17,10 @@ from database.crud_participant import (
 from database.crud_courses import get_current_rate
 from database.models import Participant, Transaction, Course
 from lexicon.lexicon_en import LEXICON
+from services.notifications import (
+    send_message_to_course_creator,
+    send_message_to_participant,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -180,41 +185,82 @@ async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
         )
 
 
-async def apply_weekly_interest(course_id: int) -> None:
-    """Apply weekly interest for all participants of a course."""
+async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
+    """Apply weekly interest for all participants of a course and notify them."""
     async with AsyncSessionLocal() as session:
+        course = await session.get(Course, course_id)
         savings_rate = await get_current_rate(session, course_id, "savings")
         loan_rate = await get_current_rate(session, course_id, "loan")
         result = await session.execute(
             select(Participant).where(Participant.course_id == course_id)
         )
         participants = result.scalars().all()
+
+        savings_total = Decimal("0")
+        savings_count = 0
+        loan_total = Decimal("0")
+        loan_count = 0
+
         for p in participants:
+            s_interest = Decimal("0")
+            l_interest = Decimal("0")
+
             if savings_rate and p.savings_balance > 0:
                 s_rate = Decimal(savings_rate)
-                interest = (p.savings_balance * s_rate / Decimal(100)).quantize(
+                s_interest = (p.savings_balance * s_rate / Decimal(100)).quantize(
                     Decimal("0.01"), rounding=ROUND_HALF_UP
                 )
-                await adjust_savings_balance(session, p, interest)
+                await adjust_savings_balance(session, p, s_interest)
                 await create_transaction(
                     session,
                     participant_id=p.id,
                     tx_type="savings_interest",
-                    amount=interest,
+                    amount=s_interest,
                     status="completed",
                 )
+                savings_total += s_interest
+                savings_count += 1
+
             if loan_rate and p.loan_balance > 0:
                 l_rate = Decimal(loan_rate)
-                interest = (p.loan_balance * l_rate / Decimal(100)).quantize(
+                l_interest = (p.loan_balance * l_rate / Decimal(100)).quantize(
                     Decimal("0.01"), rounding=ROUND_HALF_UP
                 )
-                await adjust_loan_balance(session, p, interest)
+                await adjust_loan_balance(session, p, l_interest)
                 await create_transaction(
                     session,
                     participant_id=p.id,
                     tx_type="loan_interest",
-                    amount=interest,
+                    amount=l_interest,
                     status="completed",
                 )
+                loan_total += l_interest
+                loan_count += 1
+
+            if bot and (s_interest > 0 or l_interest > 0):
+                messages = []
+                if s_interest > 0:
+                    messages.append(
+                        LEXICON["interest_savings"].format(
+                            amount=s_interest, course_name=course.name
+                        )
+                    )
+                if l_interest > 0:
+                    messages.append(
+                        LEXICON["interest_loan"].format(
+                            amount=l_interest, course_name=course.name
+                        )
+                    )
+                await send_message_to_participant(bot, p.id, "\n".join(messages))
+
+        if bot and course:
+            stats_text = LEXICON["interest_admin_stats"].format(
+                course_name=course.name,
+                s_count=savings_count,
+                s_total=savings_total,
+                l_count=loan_count,
+                l_total=loan_total,
+            )
+            await send_message_to_course_creator(bot, course_id, stats_text)
 
 # endregion --- Savings and Loans ---
