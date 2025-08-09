@@ -1,9 +1,7 @@
 from sqlalchemy import select
-from config_data.config import load_config
+from config_data import config
 from database.base import AsyncSessionLocal
 from database.models import Participant
-
-config = load_config()
 
 async def get_user_role(telegram_id: int) -> str:
     """
@@ -23,3 +21,4 @@ async def get_user_role(telegram_id: int) -> str:
     if part and part.is_registered:
         return "participant"
     return "guest"
+

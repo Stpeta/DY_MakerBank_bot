@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from config_data.config import load_config
+from config_data import config
 
-config = load_config()
 DATABASE_URL = config.db.url  # "sqlite+aiosqlite:///db/makerbank.db"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
