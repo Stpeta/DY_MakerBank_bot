@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher
-from config_data.config import load_config
+from config_data import config
 from database.base import engine, Base
 from handlers.admin import admin_router
 from handlers.common import common_router
@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    # 1) Загрузка конфига и инициализация бота
-    config = load_config()
+    # 1) Инициализация бота с уже загруженным конфигом
     bot = Bot(token=config.tg_bot.token)
     dp = Dispatcher()
 
@@ -49,3 +48,4 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
     logger.info("Bot started successfully.")
+

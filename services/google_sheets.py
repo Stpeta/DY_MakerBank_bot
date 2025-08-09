@@ -3,9 +3,7 @@
 import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from config_data.config import load_config
-
-config = load_config()
+from config_data import config
 
 # Авторизация
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -59,3 +57,4 @@ def mark_registered(sheet_url: str, email: str) -> None:
         if row.get("Email", "").strip().lower() == email.lower():
             sheet.update_cell(idx, 4, "TRUE")
             break
+
