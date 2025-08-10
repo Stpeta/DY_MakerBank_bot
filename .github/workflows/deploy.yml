@@ -39,5 +39,5 @@ jobs:
             printf "POSTMARK_API_TOKEN=%s\n" "POSTMARK_API_TOKEN" >> .env
           
             # Перезапускаем контейнеры
-            docker compose up -d --build
+            docker compose up -d --build --force-recreate
           EOF
