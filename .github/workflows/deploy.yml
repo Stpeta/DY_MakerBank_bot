@@ -24,8 +24,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
             cd /home/nedanaec/projects/DY_MakerBank_bot
             
-            # Проверяем, существует ли папка .git.
-            # Если нет, клонируем репозиторий. Если да, обновляем.
             if [ ! -d .git ]; then
               echo "Repository not found. Cloning the project..."
               git clone https://github.com/nedanaec/DY_MakerBank_bot.git .
@@ -34,12 +32,8 @@ jobs:
               git pull
             fi
 
-            # Создаём или обновляем файл .env
             printf "BOT_TOKEN=%s\n" "$BOT_TOKEN" > .env
             printf "ADMIN_IDS=%s\n" "$ADMIN_IDS" >> .env
             
-            echo "SERVICE_ACCOUNT_JSON=$(printf "%s" "$SERVICE_ACCOUNT_JSON" | sed -e 's/"/\\"/g')" >> .env
-
-            # Перезапускаем контейнеры
             docker-compose up -d --build
           EOF
