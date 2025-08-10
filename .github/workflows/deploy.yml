@@ -36,7 +36,7 @@ jobs:
             # Создаём или обновляем файл .env
             printf "BOT_TOKEN=%s\n" "$BOT_TOKEN" > .env
             printf "ADMIN_IDS=%s\n" "$ADMIN_IDS" >> .env
-            printf "POSTMARK_API_TOKEN=%s\n" "POSTMARK_API_TOKEN" >> .env
+            printf "POSTMARK_API_TOKEN=%s\n" "$POSTMARK_API_TOKEN" >> .env
           
             # Перезапускаем контейнеры
             docker compose up -d --build
