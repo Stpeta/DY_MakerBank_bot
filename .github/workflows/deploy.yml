@@ -24,11 +24,19 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<EOF
             cd /home/nedanaec/projects/DY_MakerBank_bot
             
-            git pull
+            # Проверяем, существует ли репозиторий. Если нет, клонируем по SSH.
+            if [ ! -d .git ]; then
+              echo "Repository not found. Cloning the project using SSH..."
+              git clone git@github.com:nedanaec/DY_MakerBank_bot.git .
+            else
+              echo "Repository found. Pulling latest changes..."
+              git pull
+            fi
 
+            # Создаём или обновляем файл .env
             printf "BOT_TOKEN=%s\n" "$BOT_TOKEN" > .env
             printf "ADMIN_IDS=%s\n" "$ADMIN_IDS" >> .env
-
-
+            
+            # Перезапускаем контейнеры
             docker-compose up -d --build
           EOF
