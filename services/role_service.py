@@ -1,7 +1,7 @@
-from sqlalchemy import select
 from config_data import config
 from database.base import AsyncSessionLocal
-from database.models import Participant
+from database.crud_participant import get_participants_by_telegram_id
+
 
 async def get_user_role(telegram_id: int) -> str:
     """
@@ -11,14 +11,14 @@ async def get_user_role(telegram_id: int) -> str:
     if telegram_id in config.tg_bot.admin_ids:
         return "admin"
 
-    # Иначе — ищем в таблице participants
+    # Иначе — ищем участника с активным курсом
     async with AsyncSessionLocal() as session:
-        part = await session.execute(
-            select(Participant).where(Participant.telegram_id == telegram_id)
+        participants = await get_participants_by_telegram_id(
+            session,
+            telegram_id,
+            course_is_active=True,
         )
-        part = part.scalars().first()
-        
-    if part and part.is_registered:
+
+    if participants:
         return "participant"
     return "guest"
-
