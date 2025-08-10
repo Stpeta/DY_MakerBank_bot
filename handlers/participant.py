@@ -43,7 +43,7 @@ async def participant_main(message: Message, state: FSMContext):
     await state.clear()
     async with AsyncSessionLocal() as session:
         participants = await get_participants_by_telegram_id(
-            session, message.from_user.id
+            session, message.from_user.id, course_is_active=True
         )
     if not participants:
         await message.answer("No courses found.")

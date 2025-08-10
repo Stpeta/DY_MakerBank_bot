@@ -1,6 +1,8 @@
 from _decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 
+from typing import Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -9,11 +11,11 @@ from database.models import Participant
 
 
 async def get_participants_by_telegram_id(
-        session: AsyncSession,
-        telegram_id: int,
+    session: AsyncSession,
+    telegram_id: int,
+    course_is_active: Optional[bool] = None,
 ):
-    """Return all registered participants for a given Telegram ID."""
-    result = await session.execute(
+    query = (
         select(Participant)
         .options(selectinload(Participant.course))
         .where(
@@ -21,6 +23,11 @@ async def get_participants_by_telegram_id(
             Participant.is_registered == True,
         )
     )
+
+    if course_is_active is not None:
+        query = query.where(Participant.course.has(is_active=course_is_active))
+
+    result = await session.execute(query)
     return result.scalars().all()
 
 
