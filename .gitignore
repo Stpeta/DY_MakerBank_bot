@@ -3,4 +3,4 @@
 .idea
 .venv
 temp
-db/makerbank.db
+makerbank.db
