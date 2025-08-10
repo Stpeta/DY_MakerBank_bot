@@ -67,7 +67,7 @@ LEXICON = {
         "To create a new one, click “➕ New Course”."
     ),
     "admin_main_has_courses": (
-        "You have {active} active and {finished} finished courses.\n"
+        "👋 You have {active} active and {finished} finished courses.\n"
         "Select one to manage:"
     ),
     # Inline keyboard buttons for admin actions
