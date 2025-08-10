@@ -3,3 +3,5 @@
 .idea
 .venv
 temp
+/__pycache__
+/db/makerbank.db
