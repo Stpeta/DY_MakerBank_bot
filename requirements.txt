@@ -5,3 +5,4 @@ aiosqlite
 gspread>=5.0.0
 google-auth>=2.0.0
 oauth2client>=4.1.3
+postmarker

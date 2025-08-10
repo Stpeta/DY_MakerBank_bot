@@ -15,6 +15,7 @@ class Config:
     tg_bot: TgBot
     db: DB
     SERVICE_ACCOUNT_FILE: str
+    POSTMARK_API_TOKEN: str
 
 
 def load_config(path: str | None = None) -> Config:
@@ -28,5 +29,6 @@ def load_config(path: str | None = None) -> Config:
         db=DB(
             url="sqlite+aiosqlite:///db/makerbank.db"
         ),
-        SERVICE_ACCOUNT_FILE="service_account.json"
+        SERVICE_ACCOUNT_FILE="service_account.json",
+        POSTMARK_API_TOKEN = env('POSTMARK_API_TOKEN')
     )

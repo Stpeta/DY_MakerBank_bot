@@ -26,9 +26,9 @@ jobs:
             
             git pull
 
-            printf "BOT_TOKEN=%s\n" "${{ secrets.BOT_TOKEN }}" > .env
-            printf "ADMIN_IDS=%s\n" "${{ secrets.ADMIN_IDS }}" >> .env
-            
-            
+            printf "BOT_TOKEN=%s\n" "$BOT_TOKEN" > .env
+            printf "ADMIN_IDS=%s\n" "$ADMIN_IDS" >> .env
+
+
             docker-compose up -d --build
           EOF
