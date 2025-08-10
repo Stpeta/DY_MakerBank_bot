@@ -39,7 +39,9 @@ LEXICON = {
     # Finish Course Flow
     "finish_no_active": "You have no active courses to finish.",
     "finish_select": "Select the course you want to finish:",
+    "finish_confirm": "⚠️ Course “{name}” will be permanently closed. Finish the course?",
     "finish_success": "✅ Course “{name}” has been successfully finished.",
+    "finish_participant_notify": "Course <b>{name}</b> has been finished, your final balance:",
 
     # endregion --- Course Management ---
 

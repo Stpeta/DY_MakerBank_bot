@@ -38,6 +38,7 @@ from services.course_creation_flow import (
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info
 from states.fsm import CourseCreation, CourseEdit
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 admin_router = Router()
@@ -82,17 +83,75 @@ async def admin_back(callback: CallbackQuery):
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
 
 
-@admin_router.callback_query(F.data.startswith("admin:course:finish:"))
+@admin_router.callback_query(
+    F.data.startswith("admin:course:finish:") & ~F.data.contains("finish_confirm")
+)
 async def admin_course_finish(callback: CallbackQuery):
     await callback.answer()
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
         course = await session.get(Course, int(course_id))
-        await finish_course(session, course)
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=LEXICON["button_finish_course"],
+                callback_data=f"admin:course:finish_confirm:{course_id}"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=LEXICON["button_back"],
+                callback_data=f"admin:course:info:{course_id}"
+            )
+        ],
+    ])
+    await callback.message.edit_text(
+        LEXICON["finish_confirm"].format(name=course.name),
+        reply_markup=kb,
+    )
 
-    # после завершения возвращаем главное меню одним edit
+
+@admin_router.callback_query(F.data.startswith("admin:course:finish_confirm:"))
+async def admin_course_finish_confirm(callback: CallbackQuery):
+    _, _, _, course_id = callback.data.split(":", 3)
+    async with AsyncSessionLocal() as session:
+        course = await session.get(Course, int(course_id))
+        await finish_course(session, course)
+        savings_rate = await get_current_rate(session, course.id, "savings")
+        loan_rate = await get_current_rate(session, course.id, "loan")
+        result = await session.execute(
+            select(Participant).where(
+                Participant.course_id == course.id,
+                Participant.is_registered,
+                Participant.telegram_id.is_not(None),
+            )
+        )
+        participants = result.scalars().all()
+
+    for participant in participants:
+        await callback.bot.send_message(
+            participant.telegram_id,
+            LEXICON["finish_participant_notify"].format(name=course.name),
+            parse_mode="HTML",
+        )
+        balance_text = LEXICON["main_balance_text"].format(
+            name=participant.name,
+            course_name=course.name,
+            balance=participant.balance,
+            savings=participant.savings_balance,
+            loan=participant.loan_balance,
+            savings_rate=savings_rate,
+            loan_rate=loan_rate,
+        )
+        await callback.bot.send_message(
+            participant.telegram_id,
+            balance_text,
+            parse_mode="HTML",
+        )
+
     text, kb = await build_admin_menu(callback.from_user.id)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+    await callback.answer(LEXICON["finish_success"].format(name=course.name))
  
 
 # region --- Editing course parameters ---
