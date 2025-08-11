@@ -39,6 +39,7 @@ from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
+from services.google_sheets import update_participant_finances
 
 logger = logging.getLogger(__name__)
 admin_router = Router()
@@ -402,6 +403,8 @@ async def admin_tx_approve(callback: CallbackQuery):
             await adjust_participant_balance(session, participant, tx.amount)
         elif tx.type == "cash_withdrawal":
             await adjust_participant_balance(session, participant, -tx.amount)
+
+    await update_participant_finances(participant.id)
 
     # Notify the participant
     if tx.type == "cash_deposit":

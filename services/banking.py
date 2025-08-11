@@ -21,6 +21,7 @@ from services.notifications import (
     send_message_to_course_creator,
     send_message_to_participant,
 )
+from services.google_sheets import update_participant_finances
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,8 @@ async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
             status="completed",
         )
 
+    await update_participant_finances(participant_id)
+
 
 async def withdraw_from_savings(participant_id: int, amount: Decimal | float) -> None:
     """Move funds from savings back to main balance respecting lock period."""
@@ -136,7 +139,7 @@ async def withdraw_from_savings(participant_id: int, amount: Decimal | float) ->
             amount=amount,
             status="completed",
         )
-
+    await update_participant_finances(participant_id)
 
 async def take_loan(participant_id: int, amount: Decimal | float) -> None:
     """Issue a loan to participant up to course limit."""
@@ -161,6 +164,8 @@ async def take_loan(participant_id: int, amount: Decimal | float) -> None:
             status="completed",
         )
 
+    await update_participant_finances(participant_id)
+
 
 async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
     """Repay part of the loan from main balance."""
@@ -184,6 +189,8 @@ async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
             status="completed",
         )
 
+    await update_participant_finances(participant_id)
+
 
 async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
     """Apply weekly interest for all participants of a course and notify them."""
@@ -195,6 +202,7 @@ async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
             select(Participant).where(Participant.course_id == course_id)
         )
         participants = result.scalars().all()
+        ids_to_update = [p.id for p in participants]
 
         savings_total = Decimal("0")
         savings_count = 0
@@ -265,5 +273,8 @@ async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
                 l_total=loan_total,
             )
             await send_message_to_course_creator(bot, course_id, stats_text)
+
+    for pid in ids_to_update:
+        await update_participant_finances(pid)
 
 # endregion --- Savings and Loans ---
