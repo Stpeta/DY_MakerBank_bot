@@ -42,3 +42,24 @@ def render_course_info(course, stats: dict, savings_rate: float, loan_rate: floa
         interest_day=day_name[course.interest_day],
         interest_time=course.interest_time,
     )
+
+
+def render_participant_info(
+    name: str,
+    course_name: str,
+    balance,
+    savings,
+    loan,
+    savings_rate: float,
+    loan_rate: float,
+) -> str:
+    """Собирает текст с балансом участника."""
+    return LEXICON["main_balance_text"].format(
+        name=name,
+        course_name=course_name,
+        balance=balance,
+        savings=savings,
+        loan=loan,
+        savings_rate=savings_rate,
+        loan_rate=loan_rate,
+    )
