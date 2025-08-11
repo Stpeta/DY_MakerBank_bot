@@ -39,6 +39,13 @@ def courses_list_kb(courses: list[Course]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
+def admin_menu_kb(courses: list[Course]) -> InlineKeyboardMarkup:
+    """Keyboard for the admin main menu with a course list and action row."""
+    rows = courses_list_kb(courses).inline_keyboard if courses else []
+    rows += main_menu_admin_kb().inline_keyboard
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def course_actions_kb(course_id: int) -> InlineKeyboardMarkup:
     """Keyboard under course info allowing full management."""
     return InlineKeyboardMarkup(inline_keyboard=[

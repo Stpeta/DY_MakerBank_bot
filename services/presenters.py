@@ -1,5 +1,4 @@
 from calendar import day_name
-
 from lexicon.lexicon_en import LEXICON
 
 
@@ -63,3 +62,10 @@ def render_participant_info(
         savings_rate=savings_rate,
         loan_rate=loan_rate,
     )
+
+
+def render_admin_menu(active: int, finished: int) -> str:
+    """Generate text for the admin main menu based on course counts."""
+    if active + finished == 0:
+        return LEXICON["admin_main_no_courses"]
+    return LEXICON["admin_main_has_courses"].format(active=active, finished=finished)
