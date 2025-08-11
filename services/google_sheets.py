@@ -13,7 +13,11 @@ from database.models import Course, Participant
 from lexicon.lexicon_en import LEXICON
 
 # Авторизация
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+# Добавляем Drive scope, чтобы иметь возможность создавать и шарить таблицы
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
 _creds = ServiceAccountCredentials.from_json_keyfile_name(
     config.SERVICE_ACCOUNT_FILE, SCOPES
 )

@@ -31,6 +31,7 @@ LEXICON = {
                                 "account.",
     "course_sheet_empty": "⚠️ The sheet is empty or doesn't contain the columns 'Name' and 'Email'. Please check its "
                           "contents.",
+    "course_sheet_creation_failed": "❌ Failed to create Google Sheet. Please try again later.",
 
     # Confirmation once a course is created
     "course_created": (

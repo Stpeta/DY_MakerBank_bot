@@ -4,6 +4,7 @@ from states.fsm import CourseCreation
 from services.google_sheets import create_course_sheet
 from services.course_service import create_course_basic
 from lexicon.lexicon_en import LEXICON
+from gspread.exceptions import APIError
 
 
 async def start_course_flow(message: types.Message, state: FSMContext) -> None:
@@ -52,7 +53,12 @@ async def process_admin_email(message: types.Message, state: FSMContext) -> None
     email = message.text.strip()
 
     data = await state.get_data()
-    sheet_url = create_course_sheet(data["name"], email)
+    try:
+        sheet_url = create_course_sheet(data["name"], email)
+    except APIError:
+        await message.answer(LEXICON["course_sheet_creation_failed"], parse_mode="HTML")
+        await state.clear()
+        return
     course = await create_course_basic(
         name=data["name"],
         description=data["description"],
