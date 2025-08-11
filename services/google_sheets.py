@@ -1,5 +1,6 @@
 # services/google_sheets.py
 
+import logging
 import re
 from decimal import Decimal
 import gspread
@@ -10,13 +11,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config_data import config
 from database.base import AsyncSessionLocal
 from database.models import Course, Participant
+from lexicon.lexicon_en import LEXICON
 
 # Authorization
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
 _creds = ServiceAccountCredentials.from_json_keyfile_name(
     config.SERVICE_ACCOUNT_FILE, SCOPES
 )
 _gs_client = gspread.authorize(_creds)
+
+logger = logging.getLogger(__name__)
 
 # Regex for validating the sheet URL
 _SHEET_URL_RE = re.compile(r"^https?://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)")
@@ -32,31 +39,93 @@ def fetch_students(sheet_url: str) -> list[tuple[str, str]]:
     """Read first worksheet and return a list of (name, email)."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
-    rows = sheet.get_all_values()[1:]  # skip header row
+    rows = sheet.get_all_values()[1:]
     return [(r[0].strip(), r[1].strip()) for r in rows if len(r) >= 2]
 
 def write_registration_codes(
     sheet_url: str,
     codes: dict[str, str]
 ) -> None:
-    """Write registration codes to column C for each email."""
+    """Write registration codes to column D for each email."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         email = row.get("Email", "").strip()
         if email in codes:
-            sheet.update_cell(idx, 3, codes[email])
+            sheet.update_cell(idx, 4, codes[email])
 
 def mark_registered(sheet_url: str, email: str) -> None:
-    """Mark column D ("Registered") as TRUE for the given email."""
+    """Mark column E ("Registered") as TRUE for the given email."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         if row.get("Email", "").strip().lower() == email.lower():
-            sheet.update_cell(idx, 4, "TRUE")
+            sheet.update_cell(idx, 5, "TRUE")
             break
+
+
+def create_course_sheet(course_name: str) -> str:
+    """Create a new spreadsheet for a course and return its URL."""
+    title = f"{course_name} MakerBank"
+    headers = [
+        "Name",
+        "Email",
+        "Comment",
+        "RegCode",
+        "Registered",
+        "Total",
+        "Wallet",
+        "Savings",
+        "Loan",
+    ]
+    try:
+        ss = _gs_client.create(title)
+        sheet = ss.sheet1
+        sheet.update("A1:I1", [headers])
+        ss.batch_update(
+            {
+                "requests": [
+                    {
+                        "repeatCell": {
+                            "range": {
+                                "sheetId": sheet.id,
+                                "startRowIndex": 1,
+                                "startColumnIndex": 4,
+                                "endColumnIndex": 5,
+                            },
+                            "cell": {
+                                "dataValidation": {
+                                    "condition": {"type": "BOOLEAN"},
+                                    "strict": True,
+                                    "showCustomUi": True,
+                                }
+                            },
+                            "fields": "dataValidation",
+                        }
+                    },
+                    {
+                        "addProtectedRange": {
+                            "protectedRange": {
+                                "range": {
+                                    "sheetId": sheet.id,
+                                    "startColumnIndex": 3,
+                                    "endColumnIndex": 9,
+                                },
+                                "warningOnly": True,
+                                "description": LEXICON["sheet_protect_warning"],
+                            }
+                        }
+                    },
+                ]
+            }
+        )
+        ss.share(None, perm_type="anyone", role="writer")
+        return ss.url
+    except Exception as e:  # pragma: no cover - external API errors
+        logger.exception("Failed to create sheet for course %s", course_name)
+        raise e
 
 
 async def _collect_balance_data(
@@ -89,7 +158,7 @@ def _write_balances_to_sheet(
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     # Header row
-    sheet.update("F1:I1", [["Total", "Balance", "Savings", "Loan"]])
+    sheet.update("F1:I1", [["Total", "Wallet", "Savings", "Loan"]])
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         email = row.get("Email", "").strip().lower()
@@ -104,4 +173,11 @@ async def update_course_balances(course_id: int) -> None:
 
     if sheet_url:
         _write_balances_to_sheet(sheet_url, data)
+
+
+def transfer_ownership(sheet_url: str, new_owner: str) -> None:
+    """Transfer ownership of the spreadsheet to a new user."""
+    ss_id = _normalize_url(sheet_url)
+    ss = _gs_client.open_by_key(ss_id)
+    ss.share(new_owner, perm_type="user", role="owner", transfer_ownership=True)
 

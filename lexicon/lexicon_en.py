@@ -21,20 +21,20 @@ LEXICON = {
     "course_interest_day_request": "Enter interest payout weekday (0=Monday ... 6=Sunday):",
     "course_interest_time_request": "Enter interest payout time (HH:MM, UTC):",
     "course_value_invalid": "Please enter a valid number.",
-    "course_sheet_request": "Please send the Google Sheets link containing the list of participants:",
-    # Ask for sheet URL
+    "course_sheet_created": (
+        "✅ Course “{name}” created.\n"
+        "Spreadsheet: {url}\n"
+        "Add participants to this table, then press \"Generate RegCodes\" in the course card."
+    ),
+    "sheet_creation_failed": "❌ Failed to create spreadsheet. Please try again later.",
+    "sheet_read_failed": "❌ Failed to read spreadsheet.",
 
-    # Errors related to Google Sheets
-    "course_sheet_invalid": "❌ Failed to read data from Google Sheets. Please check the link and try again.",
-    "course_sheet_invalid_format": "❗️ It seems this is not a Google Sheets link. Please send a valid link.",
-    "course_sheet_unreachable": "❌ Could not access the sheet. Make sure you have granted access to the service "
-                                "account.",
-    "course_sheet_empty": "⚠️ The sheet is empty or doesn't contain the columns 'Name' and 'Email'. Please check its "
-                          "contents.",
+    # Messages for registration code generation
+    "regcodes_generated": "✅ {count} registration codes generated.",
+    "regcodes_no_new": "No new participants found.",
 
-    # Confirmation once a course is created
-    "course_created": "✅ Course “{name}” created, {count} participants added. Registration codes have been written to "
-                      "the Google Sheets.",
+    # Warning used in protected sheet ranges
+    "sheet_protect_warning": "Do not edit this unless you are absolutely sure what you are doing.",
 
     # Finish Course Flow
     "finish_no_active": "You have no active courses to finish.",
@@ -84,6 +84,8 @@ LEXICON = {
     "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
     "button_update_sheet": "🔄 Update Spreadsheet",
+    "button_generate_regcodes": "🔑 Generate RegCodes",
+    "button_transfer_ownership": "👤 Transfer Ownership",
 
     # Emojis indicating course status
     "emoji_active": "🟢",  # Active course
@@ -111,6 +113,11 @@ LEXICON = {
     "status_finished": "finished",  # Course has ended
 
     "sheet_updated": "✅ Spreadsheet updated.",
+
+    # Ownership transfer flow
+    "ownership_email_request": "Enter Google account email to transfer ownership:",
+    "ownership_transfer_success": "✅ Ownership transferred.",
+    "ownership_transfer_failed": "❌ Could not transfer ownership: {error}",
 
     # endregion --- Admin Panel ---
 

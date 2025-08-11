@@ -87,6 +87,16 @@ def course_actions_kb(course_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
+                text=LEXICON["button_generate_regcodes"],
+                callback_data=f"admin:course:gen_codes:{course_id}"
+            ),
+            InlineKeyboardButton(
+                text=LEXICON["button_transfer_ownership"],
+                callback_data=f"admin:course:transfer:{course_id}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
                 text=LEXICON["button_update_sheet"],
                 callback_data=f"admin:course:update_sheet:{course_id}"
             ),

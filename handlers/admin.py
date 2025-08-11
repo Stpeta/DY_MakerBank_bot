@@ -31,12 +31,12 @@ from services.course_creation_flow import (
     process_course_description,
     process_savings_rate,
     process_loan_rate,
-    process_course_sheet,
 )
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info, render_participant_info
-from services.google_sheets import update_course_balances
-from states.fsm import CourseCreation, CourseEdit
+from services.google_sheets import update_course_balances, transfer_ownership as transfer_sheet_ownership
+from services.course_service import sync_participants_from_sheet
+from states.fsm import CourseCreation, CourseEdit, CourseOwnership
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
@@ -93,6 +93,35 @@ async def admin_course_update_sheet(callback: CallbackQuery):
     await callback.answer(LEXICON["sheet_updated"])
 
 
+@admin_router.callback_query(F.data.startswith("admin:course:gen_codes:"))
+async def admin_course_generate_codes(callback: CallbackQuery):
+    """Generate registration codes for new participants from the sheet."""
+    await callback.answer()
+    _, _, _, course_id = callback.data.split(":", 3)
+    try:
+        added = await sync_participants_from_sheet(int(course_id))
+    except Exception:  # pragma: no cover - external API errors
+        logger.exception("Failed to sync participants for course %s", course_id)
+        await callback.message.answer(LEXICON["sheet_read_failed"])
+        return
+    if added:
+        await callback.message.answer(
+            LEXICON["regcodes_generated"].format(count=added)
+        )
+    else:
+        await callback.message.answer(LEXICON["regcodes_no_new"])
+
+
+@admin_router.callback_query(F.data.startswith("admin:course:transfer:"))
+async def admin_course_transfer(callback: CallbackQuery, state: FSMContext):
+    """Ask admin for email to transfer sheet ownership."""
+    await callback.answer()
+    _, _, _, course_id = callback.data.split(":", 3)
+    await state.update_data(course_id=int(course_id))
+    await callback.message.answer(LEXICON["ownership_email_request"])
+    await state.set_state(CourseOwnership.waiting_for_email)
+
+
 @admin_router.callback_query(
     F.data.startswith("admin:course:finish:") & ~F.data.contains("finish_confirm")
 )
@@ -120,6 +149,26 @@ async def admin_course_finish(callback: CallbackQuery):
         LEXICON["finish_confirm"].format(name=course.name),
         reply_markup=kb,
     )
+
+
+@admin_router.message(StateFilter(CourseOwnership.waiting_for_email))
+async def handle_transfer_email(message: Message, state: FSMContext):
+    """Handle email input and transfer sheet ownership."""
+    data = await state.get_data()
+    course_id = data.get("course_id")
+    email = message.text.strip()
+    async with AsyncSessionLocal() as session:
+        course = await session.get(Course, int(course_id))
+    try:
+        transfer_sheet_ownership(course.sheet_url, email)
+    except Exception as e:  # pragma: no cover - external API errors
+        await message.answer(
+            LEXICON["ownership_transfer_failed"].format(error=e)
+        )
+        await state.clear()
+        return
+    await message.answer(LEXICON["ownership_transfer_success"])
+    await state.clear()
 
 
 @admin_router.callback_query(F.data.startswith("admin:course:finish_confirm:"))
@@ -397,12 +446,6 @@ async def handle_course_savings_rate(message: Message, state: FSMContext):
 async def handle_course_loan_rate(message: Message, state: FSMContext):
     """Process loan rate during creation flow."""
     await process_loan_rate(message, state)
-
-
-@admin_router.message(StateFilter(CourseCreation.waiting_for_sheet))
-async def handle_course_sheet(message: Message, state: FSMContext):
-    """Process Google Sheet URL during creation flow."""
-    await process_course_sheet(message, state)
 
 
 # endregion --- FSM for /new_course ---

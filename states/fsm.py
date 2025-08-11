@@ -8,7 +8,6 @@ class CourseCreation(StatesGroup):
     waiting_for_description = State()
     waiting_for_savings_rate = State()
     waiting_for_loan_rate = State()
-    waiting_for_sheet = State()
 
 
 class CourseEdit(StatesGroup):
@@ -20,6 +19,10 @@ class CourseEdit(StatesGroup):
     waiting_for_loan_rate = State()
     waiting_for_max_loan = State()
     waiting_for_savings_lock = State()
+
+
+class CourseOwnership(StatesGroup):
+    waiting_for_email = State()
 
 
 class Registration(StatesGroup):
