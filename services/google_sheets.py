@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config_data import config
 from database.base import AsyncSessionLocal
 from database.models import Course, Participant
+from lexicon.lexicon_en import LEXICON
 
 # Авторизация
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -28,6 +29,65 @@ def _normalize_url(url: str) -> str:
     m = _SHEET_URL_RE.match(url)
     return m.group(1) if m else url
 
+
+def create_course_sheet(course_name: str, admin_email: str) -> str:
+    """Создаёт новую таблицу курса, настраивает её и выдаёт права админу."""
+    title = f"{course_name} MakerBank"
+    ss = _gs_client.create(title)
+    ss.share(admin_email, perm_type="user", role="writer")
+    sheet = ss.sheet1
+
+    headers = [
+        LEXICON["sheet_col_name"],
+        LEXICON["sheet_col_email"],
+        LEXICON["sheet_col_comment"],
+        LEXICON["sheet_col_regcode"],
+        LEXICON["sheet_col_registered"],
+        LEXICON["sheet_col_total"],
+        LEXICON["sheet_col_wallet"],
+        LEXICON["sheet_col_savings"],
+        LEXICON["sheet_col_loan"],
+    ]
+    sheet.update("A1:I1", [headers])
+
+    # колонка E (Registered) как чекбоксы
+    ss.batch_update({
+        "requests": [{
+            "setDataValidation": {
+                "range": {
+                    "sheetId": sheet.id,
+                    "startRowIndex": 1,
+                    "startColumnIndex": 4,
+                    "endColumnIndex": 5,
+                },
+                "rule": {
+                    "condition": {"type": "BOOLEAN"},
+                    "strict": True,
+                    "showCustomUi": True,
+                },
+            }
+        }]
+    })
+
+    # защита колонок D:I
+    ss.batch_update({
+        "requests": [{
+            "addProtectedRange": {
+                "protectedRange": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startColumnIndex": 3,
+                        "endColumnIndex": 9,
+                    },
+                    "description": "Не редактируйте это если только абсолютно не уверены в том, что делаете",
+                    "warningOnly": True,
+                }
+            }
+        }]
+    })
+
+    return ss.url
+
 def fetch_students(sheet_url: str) -> list[tuple[str, str]]:
     """
     Читает первый лист, возвр. список (name, email).
@@ -42,7 +102,7 @@ def write_registration_codes(
     codes: dict[str, str]
 ) -> None:
     """
-    Вписывает коды регистраций в колонку C для каждого email.
+    Вписывает коды регистраций в колонку D для каждого email.
     """
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
@@ -50,18 +110,18 @@ def write_registration_codes(
     for idx, row in enumerate(records, start=2):
         email = row.get("Email", "").strip()
         if email in codes:
-            sheet.update_cell(idx, 3, codes[email])
+            sheet.update_cell(idx, 4, codes[email])
 
 def mark_registered(sheet_url: str, email: str) -> None:
     """
-    Отмечает столбец D ("Registered") как TRUE для данного email.
+    Отмечает столбец E ("Registered") как TRUE для данного email.
     """
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         if row.get("Email", "").strip().lower() == email.lower():
-            sheet.update_cell(idx, 4, "TRUE")
+            sheet.update_cell(idx, 5, "TRUE")
             break
 
 
@@ -95,7 +155,15 @@ def _write_balances_to_sheet(
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     # Заголовки
-    sheet.update("F1:I1", [["Total", "Balance", "Savings", "Loan"]])
+    sheet.update(
+        "F1:I1",
+        [[
+            LEXICON["sheet_col_total"],
+            LEXICON["sheet_col_wallet"],
+            LEXICON["sheet_col_savings"],
+            LEXICON["sheet_col_loan"],
+        ]],
+    )
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         email = row.get("Email", "").strip().lower()

@@ -6,7 +6,7 @@ class CourseCreation(StatesGroup):
     waiting_for_description = State()
     waiting_for_savings_rate = State()
     waiting_for_loan_rate = State()
-    waiting_for_sheet = State()
+    waiting_for_admin_email = State()
 
 
 class CourseEdit(StatesGroup):

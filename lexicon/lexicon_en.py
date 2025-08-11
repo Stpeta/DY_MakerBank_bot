@@ -21,8 +21,8 @@ LEXICON = {
     "course_interest_day_request": "Enter interest payout weekday (0=Monday ... 6=Sunday):",
     "course_interest_time_request": "Enter interest payout time (HH:MM, UTC):",
     "course_value_invalid": "Please enter a valid number.",
-    "course_sheet_request": "Please send the Google Sheets link containing the list of participants:",
-    # Ask for sheet URL
+    "course_admin_email_request": "Please send your Google account email to share the sheet:",
+    # Ask for admin email
 
     # Errors related to Google Sheets
     "course_sheet_invalid": "❌ Failed to read data from Google Sheets. Please check the link and try again.",
@@ -33,8 +33,10 @@ LEXICON = {
                           "contents.",
 
     # Confirmation once a course is created
-    "course_created": "✅ Course “{name}” created, {count} participants added. Registration codes have been written to "
-                      "the Google Sheets.",
+    "course_created": (
+        "✅ Course “{name}” created.\n{sheet_url}\n"
+        "Add participants to this sheet, then click “Generate RegCodes” in the course card."
+    ),
 
     # Finish Course Flow
     "finish_no_active": "You have no active courses to finish.",
@@ -84,6 +86,7 @@ LEXICON = {
     "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
     "button_update_sheet": "🔄 Update Spreadsheet",
+    "button_generate_codes": "🔢 Generate RegCodes",
 
     # Emojis indicating course status
     "emoji_active": "🟢",  # Active course
@@ -111,6 +114,19 @@ LEXICON = {
     "status_finished": "finished",  # Course has ended
 
     "sheet_updated": "✅ Spreadsheet updated.",
+    "codes_generated": "✅ Registration codes generated for {count} new participants.",
+    "codes_none": "No new participants found.",
+
+    # Column headers for Google Sheets
+    "sheet_col_name": "Name",
+    "sheet_col_email": "Email",
+    "sheet_col_comment": "Comment",
+    "sheet_col_regcode": "RegCode",
+    "sheet_col_registered": "Registered",
+    "sheet_col_total": "Total",
+    "sheet_col_wallet": "Wallet",
+    "sheet_col_savings": "Savings",
+    "sheet_col_loan": "Loan",
 
     # endregion --- Admin Panel ---
 

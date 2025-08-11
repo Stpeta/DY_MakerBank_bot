@@ -33,11 +33,12 @@ from services.course_creation_flow import (
     process_course_description,
     process_savings_rate,
     process_loan_rate,
-    process_course_sheet,
+    process_admin_email,
 )
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info, render_participant_info
 from services.google_sheets import update_course_balances
+from services.course_service import add_new_participants_from_sheet
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
 
@@ -82,6 +83,19 @@ async def admin_back(callback: CallbackQuery):
     await callback.answer()
     text, kb = await build_admin_menu(callback.from_user.id)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+@admin_router.callback_query(F.data.startswith("admin:course:generate_codes:"))
+async def admin_course_generate_codes(callback: CallbackQuery):
+    _, _, _, course_id = callback.data.split(":", 3)
+    codes = await add_new_participants_from_sheet(int(course_id))
+    if codes:
+        await callback.answer(
+            LEXICON["codes_generated"].format(count=len(codes)),
+            show_alert=True,
+        )
+    else:
+        await callback.answer(LEXICON["codes_none"], show_alert=True)
 
 
 @admin_router.callback_query(F.data.startswith("admin:course:update_sheet:"))
@@ -379,9 +393,9 @@ async def handle_course_loan_rate(message: Message, state: FSMContext):
     await process_loan_rate(message, state)
 
 
-@admin_router.message(StateFilter(CourseCreation.waiting_for_sheet))
-async def handle_course_sheet(message: Message, state: FSMContext):
-    await process_course_sheet(message, state)
+@admin_router.message(StateFilter(CourseCreation.waiting_for_admin_email))
+async def handle_admin_email(message: Message, state: FSMContext):
+    await process_admin_email(message, state)
 
 
 # endregion --- FSM для /new_course ---

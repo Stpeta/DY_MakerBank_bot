@@ -1,12 +1,8 @@
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from states.fsm import CourseCreation
-from services.google_sheets import (
-    is_valid_sheet_url,
-    fetch_students,
-    write_registration_codes,
-)
-from services.course_service import create_course_with_participants
+from services.google_sheets import create_course_sheet
+from services.course_service import create_course_basic
 from lexicon.lexicon_en import LEXICON
 
 
@@ -48,45 +44,26 @@ async def process_loan_rate(message: types.Message, state: FSMContext) -> None:
         await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML",)
         return
     await state.update_data(loan_rate=rate)
-    await message.answer(LEXICON["course_sheet_request"], parse_mode="HTML",)
-    await state.set_state(CourseCreation.waiting_for_sheet)
+    await message.answer(LEXICON["course_admin_email_request"], parse_mode="HTML",)
+    await state.set_state(CourseCreation.waiting_for_admin_email)
 
 
-async def process_course_sheet(message: types.Message, state: FSMContext) -> None:
-    sheet_url = message.text.strip()
-    if not is_valid_sheet_url(sheet_url):
-        await message.answer(LEXICON["course_sheet_invalid_format"], parse_mode="HTML",)
-        return
+async def process_admin_email(message: types.Message, state: FSMContext) -> None:
+    email = message.text.strip()
 
-    # 1) читаем участников
-    try:
-        participants_raw = fetch_students(sheet_url)
-    except Exception:  # gspread.exceptions.APIError и др.
-        await message.answer(LEXICON["course_sheet_unreachable"], parse_mode="HTML",)
-        return
-
-    if not participants_raw:
-        await message.answer(LEXICON["course_sheet_empty"], parse_mode="HTML",)
-        return
-
-    # 2) сервис создаёт курс и возвращает карту кодов
     data = await state.get_data()
-    course, codes_map = await create_course_with_participants(
+    sheet_url = create_course_sheet(data["name"], email)
+    course = await create_course_basic(
         name=data["name"],
         description=data["description"],
         creator_id=message.from_user.id,
         sheet_url=sheet_url,
-        participants_raw=participants_raw,
         savings_rate=data.get("savings_rate", 0),
         loan_rate=data.get("loan_rate", 0),
     )
 
-    # 3) пишем коды обратно в Google Sheet
-    write_registration_codes(sheet_url, codes_map)
-
-    # 4) финальный ответ
     await message.answer(
-        LEXICON["course_created"].format(name=course.name, count=len(codes_map)),
+        LEXICON["course_created"].format(name=course.name, sheet_url=sheet_url),
         parse_mode="HTML",
     )
     await state.clear()
