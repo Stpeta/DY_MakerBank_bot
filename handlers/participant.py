@@ -1,11 +1,13 @@
 import logging
+from contextlib import suppress
 from datetime import datetime, timezone, timedelta
 from _decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
+from aiogram.exceptions import TelegramBadRequest
 
 from database.base import AsyncSessionLocal
 from database.crud_participant import get_participants_by_telegram_id
@@ -35,6 +37,18 @@ logger = logging.getLogger(__name__)
 participant_router = Router()
 participant_router.message.filter(RoleFilter("participant"))
 participant_router.callback_query.filter(RoleFilter("participant"))
+
+
+async def _remove_cancel_keyboard(bot: Bot, state: FSMContext, chat_id: int) -> None:
+    """Remove cancel keyboard from previous bot message if present."""
+    data = await state.get_data()
+    msg_id = data.get("cancel_message_id")
+    if msg_id:
+        with suppress(TelegramBadRequest):
+            await bot.edit_message_reply_markup(
+                chat_id=chat_id, message_id=msg_id, reply_markup=None
+            )
+        await state.update_data(cancel_message_id=None)
 
 
 @participant_router.message(Command("start"), StateFilter(None))
@@ -111,24 +125,29 @@ async def choose_course(callback: CallbackQuery, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:withdraw_cash")
 async def ask_withdraw(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    await _remove_cancel_keyboard(callback.bot, state, callback.message.chat.id)
     await callback.message.edit_text(
         LEXICON["withdraw_amount_request"],
         parse_mode="HTML",
-        reply_markup=cancel_operation_kb()
+        reply_markup=cancel_operation_kb(),
     )
     await state.set_state(CashOperations.waiting_for_withdraw_amount)
+    await state.update_data(cancel_message_id=callback.message.message_id)
 
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_withdraw_amount))
 async def process_withdraw(message: Message, state: FSMContext):
     # Handle withdrawal amount, create pending request, notify admin, await approval.
+    await _remove_cancel_keyboard(message.bot, state, message.chat.id)
     text = message.text.strip()
     if not text.isdigit() or int(text) <= 0:
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
-            reply_markup=cancel_operation_kb()
+            reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     amount = int(text)
 
     # Create pending transaction
@@ -138,11 +157,13 @@ async def process_withdraw(message: Message, state: FSMContext):
     try:
         tx_id = await create_withdrawal_request(data.get("participant_id"), amount)
     except ValueError as e:
-        return await message.answer(
+        msg = await message.answer(
             str(e),
             parse_mode="HTML",
-            reply_markup=cancel_operation_kb()
+            reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
 
     course_id = data.get("course_id")
     course_name = data.get("course_name")
@@ -165,15 +186,16 @@ async def process_withdraw(message: Message, state: FSMContext):
     await state.update_data(tx_id=tx_id)
     await state.set_state(CashOperations.waiting_for_approval)
 
-    await message.answer(
+    msg = await message.answer(
         LEXICON["withdraw_waiting_approval"].format(
             amount=amount,
             tx_id=tx_id,
             course_name=course_name,
             name=participant_name),
         parse_mode="HTML",
-        reply_markup=cancel_operation_kb()
+        reply_markup=cancel_operation_kb(),
     )
+    await state.update_data(cancel_message_id=msg.message_id)
 
 
 # endregion --- Withdraw Flow ---
@@ -183,24 +205,29 @@ async def process_withdraw(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:deposit_cash")
 async def ask_deposit(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    await _remove_cancel_keyboard(callback.bot, state, callback.message.chat.id)
     await callback.message.edit_text(
         LEXICON["deposit_amount_request"],
         parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
     await state.set_state(CashOperations.waiting_for_deposit_amount)
+    await state.update_data(cancel_message_id=callback.message.message_id)
 
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_deposit_amount))
 async def process_deposit(message: Message, state: FSMContext):
     """Handle deposit amount, create pending request, notify admin, await approval."""
+    await _remove_cancel_keyboard(message.bot, state, message.chat.id)
     text = message.text.strip()
     if not text.isdigit() or int(text) <= 0:
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb()
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     amount = int(text)
 
     # Create pending transaction
@@ -211,11 +238,12 @@ async def process_deposit(message: Message, state: FSMContext):
     try:
         tx_id = await create_deposit_request(pid, amount)
     except ValueError as e:
-        return await message.answer(
+        await message.answer(
             str(e),
             parse_mode="HTML",
             reply_markup=main_menu_participant_kb()
         )
+        return
 
     course_id = data.get("course_id")
     course_name = data.get("course_name")
@@ -238,7 +266,7 @@ async def process_deposit(message: Message, state: FSMContext):
     await state.update_data(tx_id=tx_id)
     await state.set_state(CashOperations.waiting_for_approval)
 
-    await message.answer(
+    msg = await message.answer(
         LEXICON["deposit_waiting_approval"].format(
             amount=amount,
             tx_id=tx_id,
@@ -247,6 +275,7 @@ async def process_deposit(message: Message, state: FSMContext):
         parse_mode="HTML",
         reply_markup=cancel_operation_kb()
     )
+    await state.update_data(cancel_message_id=msg.message_id)
 
 
 # endregion --- Deposit Flow ---
@@ -256,6 +285,7 @@ async def process_deposit(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:to_savings")
 async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    await _remove_cancel_keyboard(callback.bot, state, callback.message.chat.id)
     data = await state.get_data()
     course_id = data.get("course_id")
     async with AsyncSessionLocal() as session:
@@ -274,36 +304,44 @@ async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
         reply_markup=cancel_operation_kb(),
     )
     await state.set_state(CashOperations.waiting_for_savings_deposit_amount)
+    await state.update_data(cancel_message_id=callback.message.message_id)
 
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_deposit_amount))
 async def process_to_savings(message: Message, state: FSMContext):
+    await _remove_cancel_keyboard(message.bot, state, message.chat.id)
     text = message.text.strip()
     try:
         amount = Decimal(text)
     except (InvalidOperation, ValueError):
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amount <= 0:
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
         await move_to_savings(pid, amount)
     except ValueError as e:
-        return await message.answer(
+        msg = await message.answer(
             str(e),
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     await state.set_state(None)
     text_menu, kb = await build_participant_menu(
         pid, data.get("participant_name"), data.get("course_name")
@@ -318,42 +356,51 @@ async def process_to_savings(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:from_savings")
 async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    await _remove_cancel_keyboard(callback.bot, state, callback.message.chat.id)
     await callback.message.edit_text(
         LEXICON["from_savings_amount_request"],
         parse_mode="HTML",
         reply_markup=cancel_operation_kb(),
     )
     await state.set_state(CashOperations.waiting_for_savings_withdraw_amount)
+    await state.update_data(cancel_message_id=callback.message.message_id)
 
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_withdraw_amount))
 async def process_from_savings(message: Message, state: FSMContext):
+    await _remove_cancel_keyboard(message.bot, state, message.chat.id)
     text = message.text.strip()
     try:
         amount = Decimal(text)
     except (InvalidOperation, ValueError):
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amount <= 0:
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
         await withdraw_from_savings(pid, amount)
     except ValueError as e:
-        return await message.answer(
+        msg = await message.answer(
             str(e),
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     await state.set_state(None)
     text_menu, kb = await build_participant_menu(
         pid, data.get("participant_name"), data.get("course_name")
@@ -371,42 +418,51 @@ async def process_from_savings(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:take_loan")
 async def ask_take_loan(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    await _remove_cancel_keyboard(callback.bot, state, callback.message.chat.id)
     await callback.message.edit_text(
         LEXICON["take_loan_amount_request"],
         parse_mode="HTML",
         reply_markup=cancel_operation_kb(),
     )
     await state.set_state(CashOperations.waiting_for_take_loan_amount)
+    await state.update_data(cancel_message_id=callback.message.message_id)
 
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_take_loan_amount))
 async def process_take_loan(message: Message, state: FSMContext):
+    await _remove_cancel_keyboard(message.bot, state, message.chat.id)
     text = message.text.strip()
     try:
         amount = Decimal(text)
     except (InvalidOperation, ValueError):
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amount <= 0:
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
         await take_loan(pid, amount)
     except ValueError as e:
-        return await message.answer(
+        msg = await message.answer(
             str(e),
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     await state.set_state(None)
     text_menu, kb = await build_participant_menu(
         pid, data.get("participant_name"), data.get("course_name")
@@ -421,42 +477,51 @@ async def process_take_loan(message: Message, state: FSMContext):
 @participant_router.callback_query(F.data == "participant:repay_loan")
 async def ask_repay_loan(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
+    await _remove_cancel_keyboard(callback.bot, state, callback.message.chat.id)
     await callback.message.edit_text(
         LEXICON["repay_loan_amount_request"],
         parse_mode="HTML",
         reply_markup=cancel_operation_kb(),
     )
     await state.set_state(CashOperations.waiting_for_repay_loan_amount)
+    await state.update_data(cancel_message_id=callback.message.message_id)
 
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_repay_loan_amount))
 async def process_repay_loan(message: Message, state: FSMContext):
+    await _remove_cancel_keyboard(message.bot, state, message.chat.id)
     text = message.text.strip()
     try:
         amount = Decimal(text)
     except (InvalidOperation, ValueError):
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amount <= 0:
-        return await message.answer(
+        msg = await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     data = await state.get_data()
     pid = data.get("participant_id")
     try:
         await repay_loan(pid, amount)
     except ValueError as e:
-        return await message.answer(
+        msg = await message.answer(
             str(e),
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+        await state.update_data(cancel_message_id=msg.message_id)
+        return
     await state.set_state(None)
     text_menu, kb = await build_participant_menu(
         pid, data.get("participant_name"), data.get("course_name")
@@ -497,6 +562,7 @@ async def user_cancel_cash_request(callback: CallbackQuery, state: FSMContext):
             )
 
     await state.set_state(None)
+    data.pop("cancel_message_id", None)
     await state.set_data(data)
     await callback.message.edit_text(
         LEXICON["cash_request_cancelled"].format(
@@ -532,5 +598,6 @@ async def cancel_during_input(callback: CallbackQuery, state: FSMContext):
         data.get("participant_id"), data.get("participant_name"), data.get("course_name")
     )
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+    await state.update_data(cancel_message_id=None)
 
 # endregion --- Withdraw/Deposit Cancellation ---
