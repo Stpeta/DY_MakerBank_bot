@@ -4,12 +4,12 @@ import re
 from decimal import Decimal
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config_data import config
 from database.base import AsyncSessionLocal
-from database.models import Course, Participant
+from database.crud_courses import get_course_by_id
+from database.crud_participant import get_participants_by_course
 
 # Авторизация
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -69,11 +69,8 @@ async def _collect_balance_data(
     session: AsyncSession, course_id: int
 ) -> tuple[str, dict[str, tuple[float, float, float, float]]]:
     """Собирает данные о балансах участников курса."""
-    course = await session.get(Course, course_id)
-    result = await session.execute(
-        select(Participant).where(Participant.course_id == course_id)
-    )
-    participants = result.scalars().all()
+    course = await get_course_by_id(session, course_id)
+    participants = await get_participants_by_course(session, course_id)
 
     data: dict[str, tuple[float, float, float, float]] = {}
     for p in participants:

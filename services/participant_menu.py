@@ -1,8 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup
 
 from database.base import AsyncSessionLocal
-from database.models import Participant
 from database.crud_courses import get_current_rate
+from database.crud_participant import get_participant_by_id
 
 from keyboards.participant import main_menu_participant_kb
 
@@ -16,7 +16,7 @@ async def build_participant_menu(
 ) -> tuple[str, InlineKeyboardMarkup]:
     # Construct main menu text and keyboard for a participant
     async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, participant_id)
+        participant = await get_participant_by_id(session, participant_id)
         if not participant:
             text = "Participant not found or not registered."
             return text, InlineKeyboardMarkup()

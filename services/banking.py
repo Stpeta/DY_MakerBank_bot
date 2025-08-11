@@ -5,17 +5,23 @@ from datetime import datetime, timedelta
 from _decimal import Decimal, ROUND_HALF_UP
 
 from aiogram import Bot
-from sqlalchemy import select
 
 from database.base import AsyncSessionLocal
-from database.crud_transactions import create_transaction, update_transaction_status
-from database.crud_participant import (
-    adjust_participant_balance,
-    adjust_savings_balance,
-    adjust_loan_balance,
+from database.crud_transactions import (
+    create_transaction,
+    update_transaction_status,
+    get_transaction_by_id,
 )
-from database.crud_courses import get_current_rate
-from database.models import Participant, Transaction, Course
+from database.crud_participant import (
+    adjust_balance,
+    get_participant_by_id,
+    get_participants_by_course,
+)
+from database.crud_courses import (
+    get_current_rate,
+    get_course_by_id,
+    update_course,
+)
 from lexicon.lexicon_en import LEXICON
 from services.notifications import (
     send_message_to_course_creator,
@@ -33,14 +39,12 @@ async def create_withdrawal_request(
 ) -> int:
     # Create a pending withdrawal transaction
     async with AsyncSessionLocal() as session:
-        # Fetch participant and check balance
-        participant = await session.get(Participant, participant_id)
+        participant = await get_participant_by_id(session, participant_id)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.balance:
             raise ValueError(LEXICON["insufficient_funds"])
 
-        # Create pending transaction
         tx = await create_transaction(
             session=session,
             participant_id=participant_id,
@@ -79,11 +83,8 @@ async def cancel_transaction(
 ) -> None:
     # Cancel a pending transaction belonging to the given participant
     async with AsyncSessionLocal() as session:
-        await update_transaction_status(
-            session,
-            await session.get(Transaction, tx_id),
-            "canceled",
-        )
+        tx = await get_transaction_by_id(session, tx_id)
+        await update_transaction_status(session, tx, "canceled")
     logger.info(f"Transaction canceled by participant: tx_id={tx_id}, participant_id={participant_id}")
 
 # endregion --- Cash Transactions ---
@@ -94,15 +95,15 @@ async def cancel_transaction(
 async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
     """Transfer amount from main balance to savings immediately."""
     async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, participant_id)
+        participant = await get_participant_by_id(session, participant_id)
         amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.balance:
             raise ValueError(LEXICON["insufficient_funds"])
 
-        await adjust_participant_balance(session, participant, -amount)
-        await adjust_savings_balance(session, participant, amount)
+        await adjust_balance(session, participant, -amount, "balance")
+        await adjust_balance(session, participant, amount, "savings")
         await create_transaction(
             session,
             participant_id=participant_id,
@@ -115,8 +116,8 @@ async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
 async def withdraw_from_savings(participant_id: int, amount: Decimal | float) -> None:
     """Move funds from savings back to main balance respecting lock period."""
     async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, participant_id)
-        course = await session.get(Course, participant.course_id)
+        participant = await get_participant_by_id(session, participant_id)
+        course = participant.course
         amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
@@ -127,8 +128,8 @@ async def withdraw_from_savings(participant_id: int, amount: Decimal | float) ->
             unlock_time = last + timedelta(days=course.savings_withdrawal_delay)
             raise ValueError(LEXICON["savings_locked_until"].format(unlock_time=unlock_time))
 
-        await adjust_savings_balance(session, participant, -amount)
-        await adjust_participant_balance(session, participant, amount)
+        await adjust_balance(session, participant, -amount, "savings")
+        await adjust_balance(session, participant, amount, "balance")
         await create_transaction(
             session,
             participant_id=participant_id,
@@ -141,8 +142,8 @@ async def withdraw_from_savings(participant_id: int, amount: Decimal | float) ->
 async def take_loan(participant_id: int, amount: Decimal | float) -> None:
     """Issue a loan to participant up to course limit."""
     async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, participant_id)
-        course = await session.get(Course, participant.course_id)
+        participant = await get_participant_by_id(session, participant_id)
+        course = participant.course
         amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
@@ -151,8 +152,8 @@ async def take_loan(participant_id: int, amount: Decimal | float) -> None:
                 LEXICON["loan_limit_reached"].format(limit=course.max_loan_amount)
             )
 
-        await adjust_loan_balance(session, participant, amount)
-        await adjust_participant_balance(session, participant, amount)
+        await adjust_balance(session, participant, amount, "loan")
+        await adjust_balance(session, participant, amount, "balance")
         await create_transaction(
             session,
             participant_id=participant_id,
@@ -165,7 +166,7 @@ async def take_loan(participant_id: int, amount: Decimal | float) -> None:
 async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
     """Repay part of the loan from main balance."""
     async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, participant_id)
+        participant = await get_participant_by_id(session, participant_id)
         amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
@@ -174,8 +175,8 @@ async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
         if amount > participant.loan_balance:
             raise ValueError(LEXICON["loan_repay_exceeds_loan_balance"])
 
-        await adjust_participant_balance(session, participant, -amount)
-        await adjust_loan_balance(session, participant, -amount)
+        await adjust_balance(session, participant, -amount, "balance")
+        await adjust_balance(session, participant, -amount, "loan")
         await create_transaction(
             session,
             participant_id=participant_id,
@@ -188,13 +189,10 @@ async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
 async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
     """Apply weekly interest for all participants of a course and notify them."""
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
+        course = await get_course_by_id(session, course_id)
         savings_rate = await get_current_rate(session, course_id, "savings")
         loan_rate = await get_current_rate(session, course_id, "loan")
-        result = await session.execute(
-            select(Participant).where(Participant.course_id == course_id)
-        )
-        participants = result.scalars().all()
+        participants = await get_participants_by_course(session, course_id)
 
         savings_total = Decimal("0")
         savings_count = 0
@@ -210,7 +208,7 @@ async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
                 s_interest = (p.savings_balance * s_rate / Decimal(100)).quantize(
                     Decimal("0.01"), rounding=ROUND_HALF_UP
                 )
-                await adjust_savings_balance(session, p, s_interest)
+                await adjust_balance(session, p, s_interest, "savings")
                 await create_transaction(
                     session,
                     participant_id=p.id,
@@ -226,7 +224,7 @@ async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
                 l_interest = (p.loan_balance * l_rate / Decimal(100)).quantize(
                     Decimal("0.01"), rounding=ROUND_HALF_UP
                 )
-                await adjust_loan_balance(session, p, l_interest)
+                await adjust_balance(session, p, l_interest, "loan")
                 await create_transaction(
                     session,
                     participant_id=p.id,
@@ -253,8 +251,7 @@ async def apply_weekly_interest(course_id: int, bot: Bot | None = None) -> None:
                     )
                 await send_message_to_participant(bot, p.id, "\n".join(messages))
 
-        course.last_interest_at = datetime.utcnow()
-        await session.commit()
+        await update_course(session, course.id, last_interest_at=datetime.utcnow())
 
         if bot and course:
             stats_text = LEXICON["interest_admin_stats"].format(

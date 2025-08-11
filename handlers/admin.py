@@ -14,15 +14,23 @@ from aiogram.types import (
 )
 
 from database.base import AsyncSessionLocal
-from database.crud_transactions import update_transaction_status
-from database.crud_participant import adjust_participant_balance
+from database.crud_transactions import (
+    update_transaction_status,
+    get_transaction_by_id,
+)
+from database.crud_participant import (
+    adjust_balance,
+    get_participant_by_id,
+    get_registered_participants_with_telegram,
+)
 from database.crud_courses import (
     finish_course,
     get_course_stats,
     get_current_rate,
     set_rate,
+    get_course_by_id,
+    update_course,
 )
-from database.models import Course, Transaction, Participant
 from filters.role_filter import RoleFilter
 from keyboards.admin import course_actions_kb
 from lexicon.lexicon_en import LEXICON
@@ -39,7 +47,6 @@ from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info, render_participant_info
 from services.google_sheets import update_course_balances
 from states.fsm import CourseCreation, CourseEdit
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 admin_router = Router()
@@ -57,7 +64,7 @@ async def admin_course_info(callback: CallbackQuery):
     await callback.answer()
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, int(course_id))
+        course = await get_course_by_id(session, int(course_id))
         stats = await get_course_stats(session, course.id)
         savings_rate = await get_current_rate(session, course.id, "savings")
         loan_rate = await get_current_rate(session, course.id, "loan")
@@ -98,7 +105,7 @@ async def admin_course_finish(callback: CallbackQuery):
     await callback.answer()
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, int(course_id))
+        course = await get_course_by_id(session, int(course_id))
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
@@ -123,18 +130,11 @@ async def admin_course_finish(callback: CallbackQuery):
 async def admin_course_finish_confirm(callback: CallbackQuery):
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, int(course_id))
+        course = await get_course_by_id(session, int(course_id))
         await finish_course(session, course)
         savings_rate = await get_current_rate(session, course.id, "savings")
         loan_rate = await get_current_rate(session, course.id, "loan")
-        result = await session.execute(
-            select(Participant).where(
-                Participant.course_id == course.id,
-                Participant.is_registered,
-                Participant.telegram_id.is_not(None),
-            )
-        )
-        participants = result.scalars().all()
+        participants = await get_registered_participants_with_telegram(session, course.id)
 
     for participant in participants:
         await callback.bot.send_message(
@@ -167,7 +167,7 @@ async def admin_course_finish_confirm(callback: CallbackQuery):
 
 async def _send_course_info(message: Message, course_id: int) -> None:
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
+        course = await get_course_by_id(session, course_id)
         stats = await get_course_stats(session, course.id)
         savings_rate = await get_current_rate(session, course.id, "savings")
         loan_rate = await get_current_rate(session, course.id, "loan")
@@ -218,9 +218,7 @@ async def edit_course_name(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.name = message.text.strip()
-        await session.commit()
+        await update_course(session, course_id, name=message.text.strip())
     await state.clear()
     await _send_course_info(message, course_id)
 
@@ -230,9 +228,7 @@ async def edit_course_description(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.description = message.text.strip()
-        await session.commit()
+        await update_course(session, course_id, description=message.text.strip())
     await state.clear()
     await _send_course_info(message, course_id)
 
@@ -250,9 +246,7 @@ async def edit_course_interest_day(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.interest_day = day
-        await session.commit()
+        await update_course(session, course_id, interest_day=day)
     await state.clear()
     await _send_course_info(message, course_id)
 
@@ -268,9 +262,7 @@ async def edit_course_interest_time(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.interest_time = text
-        await session.commit()
+        await update_course(session, course_id, interest_time=text)
     await state.clear()
     await _send_course_info(message, course_id)
 
@@ -318,9 +310,7 @@ async def edit_course_max_loan(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.max_loan_amount = amount
-        await session.commit()
+        await update_course(session, course_id, max_loan_amount=amount)
     await state.clear()
     await _send_course_info(message, course_id)
 
@@ -336,9 +326,7 @@ async def edit_course_savings_lock(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
-        course.savings_withdrawal_delay = days
-        await session.commit()
+        await update_course(session, course_id, savings_withdrawal_delay=days)
     await state.clear()
     await _send_course_info(message, course_id)
 
@@ -395,21 +383,19 @@ async def admin_tx_approve(callback: CallbackQuery):
     tx_id = int(tx_id_str)
 
     async with AsyncSessionLocal() as session:
-        tx = await session.get(Transaction, tx_id)
+        tx = await get_transaction_by_id(session, tx_id)
         if not tx or tx.status != "pending":
             return
 
-        # Approve the transaction
         await update_transaction_status(session, tx, "completed")
 
-        # Apply balance change
-        participant = await session.get(Participant, tx.participant_id)
-        course = await session.get(Course, participant.course_id)
+        participant = await get_participant_by_id(session, tx.participant_id)
+        course = participant.course
         course_name = course.name
         if tx.type == "cash_deposit":
-            await adjust_participant_balance(session, participant, tx.amount)
+            await adjust_balance(session, participant, tx.amount, "balance")
         elif tx.type == "cash_withdrawal":
-            await adjust_participant_balance(session, participant, -tx.amount)
+            await adjust_balance(session, participant, -tx.amount, "balance")
 
     # Notify the participant
     if tx.type == "cash_deposit":
@@ -450,14 +436,13 @@ async def admin_tx_decline(callback: CallbackQuery):
     tx_id = int(tx_id_str)
 
     async with AsyncSessionLocal() as session:
-        tx = await session.get(Transaction, tx_id)
+        tx = await get_transaction_by_id(session, tx_id)
         if not tx or tx.status != "pending":
             return
 
-        # Decline the transaction
         await update_transaction_status(session, tx, "declined")
-        participant = await session.get(Participant, tx.participant_id)
-        course = await session.get(Course, participant.course_id)
+        participant = await get_participant_by_id(session, tx.participant_id)
+        course = participant.course
         course_name = course.name
 
     # Notify the participant

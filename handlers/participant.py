@@ -9,7 +9,7 @@ from aiogram.types import Message, CallbackQuery
 
 from database.base import AsyncSessionLocal
 from database.crud_participant import get_participants_by_telegram_id
-from database.models import Participant, Course
+from database.crud_courses import get_course_by_id
 from filters.role_filter import RoleFilter
 from keyboards.admin import tx_approval_kb
 from keyboards.participant import (
@@ -259,7 +259,7 @@ async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     course_id = data.get("course_id")
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
+        course = await get_course_by_id(session, course_id)
     unlock_time = datetime.now(timezone.utc) + timedelta(days=course.savings_withdrawal_delay)
     text = (
         LEXICON["to_savings_amount_request"]

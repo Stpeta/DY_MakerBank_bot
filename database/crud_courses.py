@@ -62,6 +62,27 @@ async def get_active_courses_by_admin(
     return result.scalars().all()
 
 
+async def get_course_by_id(
+        session: AsyncSession,
+        course_id: int,
+) -> Course | None:
+    """Fetch a course by its ID."""
+    result = await session.execute(
+        select(Course).where(Course.id == course_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_active_courses(
+        session: AsyncSession,
+) -> list[Course]:
+    """Retrieve all active courses."""
+    result = await session.execute(
+        select(Course).where(Course.is_active)
+    )
+    return result.scalars().all()
+
+
 async def finish_course(
         session: AsyncSession,
         course: Course
@@ -83,6 +104,20 @@ async def add_participants(
     objs = [Participant(course_id=course_id, **item) for item in data]
     session.add_all(objs)
     await session.commit()
+
+
+async def update_course(
+        session: AsyncSession,
+        course_id: int,
+        **kwargs,
+) -> Course:
+    """Update fields of a course and return refreshed entity."""
+    course = await session.get(Course, course_id)
+    for field, value in kwargs.items():
+        setattr(course, field, value)
+    await session.commit()
+    await session.refresh(course)
+    return course
 
 
 class CourseStats(TypedDict):

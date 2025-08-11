@@ -40,3 +40,11 @@ async def update_transaction_status(
     await session.commit()
     await session.refresh(tx)
     return tx
+
+
+async def get_transaction_by_id(
+        session: AsyncSession,
+        tx_id: int,
+) -> Transaction | None:
+    """Fetch a transaction by its ID."""
+    return await session.get(Transaction, tx_id)

@@ -2,10 +2,9 @@ import asyncio
 from datetime import datetime, timedelta, time
 
 from aiogram import Bot
-from sqlalchemy import select
 
 from database.base import AsyncSessionLocal
-from database.models import Course
+from database.crud_courses import get_active_courses
 from services.banking import apply_weekly_interest
 
 
@@ -14,8 +13,7 @@ async def interest_scheduler(bot: Bot, poll_interval: int = 300) -> None:
     while True:
         now = datetime.utcnow()
         async with AsyncSessionLocal() as session:
-            result = await session.execute(select(Course).where(Course.is_active))
-            courses = result.scalars().all()
+            courses = await get_active_courses(session)
             for course in courses:
                 try:
                     hour, minute = map(int, course.interest_time.split(":"))

@@ -6,7 +6,8 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 
 from database.base import AsyncSessionLocal
-from database.models import Participant, Course
+from database.crud_participant import get_participant_by_id
+from database.crud_courses import get_course_by_id
 
 
 async def send_message_to_telegram_id(
@@ -37,7 +38,7 @@ async def send_message_to_participant(
     Assumes Participant.telegram_id stores the correct telegram_id.
     """
     async with AsyncSessionLocal() as session:
-        participant = await session.get(Participant, participant_id)
+        participant = await get_participant_by_id(session, participant_id)
         if participant and participant.telegram_id:
             await send_message_to_telegram_id(
                 bot,
@@ -58,7 +59,7 @@ async def send_message_to_course_creator(
     and send them a message.
     """
     async with AsyncSessionLocal() as session:
-        course = await session.get(Course, course_id)
+        course = await get_course_by_id(session, course_id)
         if course and course.creator_id:
             await send_message_to_telegram_id(
                 bot,
