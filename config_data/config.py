@@ -27,7 +27,8 @@ def load_config(path: str | None = None) -> Config:
             admin_ids=list(map(int, env.list('ADMIN_IDS')))
         ),
         db=DB(
-            url="sqlite+aiosqlite:////db/makerbank.db"
+            url="sqlite+aiosqlite:///db/makerbank.db"
+            # url="sqlite+aiosqlite:////db/makerbank.db" -- for deploy must be "////"
         ),
         SERVICE_ACCOUNT_FILE="service_account.json",
         POSTMARK_API_TOKEN = env('POSTMARK_API_TOKEN')
