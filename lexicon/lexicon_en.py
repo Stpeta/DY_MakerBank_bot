@@ -122,6 +122,7 @@ LEXICON = {
     "main_balance_text": (
         "🏫 Course: {course_name}\n"
         "👤 {name}\n\n"
+        "<b>🪙 Total: {total:.2f}</b>\n\n"
         "💳 Balance: {balance}\n"
         "💹 Savings: {savings} (rate: {savings_rate}% weekly)\n"
         "💸 Loans: {loan} (rate: {loan_rate}% weekly)\n"
