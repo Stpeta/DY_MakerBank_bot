@@ -9,5 +9,6 @@ AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=F
 Base = declarative_base()
 
 async def get_async_session() -> AsyncSession:
+    """Yield a database session for dependency injection."""
     async with AsyncSessionLocal() as session:
         yield session

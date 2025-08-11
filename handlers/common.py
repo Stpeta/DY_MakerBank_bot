@@ -8,7 +8,5 @@ common_router = Router()
 
 @common_router.message(Command("about"))
 async def cmd_about(message: Message):
-    """
-    Общий хэндлер для /about — работает для любого пользователя.
-    """
-    await message.answer(LEXICON["about_text"], parse_mode="HTML",)
+    """Generic handler for /about — works for any user."""
+    await message.answer(LEXICON["about_text"], parse_mode="HTML")

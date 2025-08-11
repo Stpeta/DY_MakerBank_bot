@@ -1,5 +1,3 @@
-# services/banking.py
-
 import logging
 from datetime import datetime, timedelta
 from _decimal import Decimal, ROUND_HALF_UP
@@ -31,7 +29,7 @@ async def create_withdrawal_request(
         participant_id: int,
         amount: int
 ) -> int:
-    # Create a pending withdrawal transaction
+    """Create a pending withdrawal transaction and return its ID."""
     async with AsyncSessionLocal() as session:
         # Fetch participant and check balance
         participant = await session.get(Participant, participant_id)
@@ -46,10 +44,12 @@ async def create_withdrawal_request(
             participant_id=participant_id,
             tx_type="cash_withdrawal",
             amount=amount,
-            status="pending"
+            status="pending",
         )
 
-    logger.info(f"Withdrawal request created: tx_id={tx.id}, participant_id={participant_id}, amount={amount}")
+    logger.info(
+        f"Withdrawal request created: tx_id={tx.id}, participant_id={participant_id}, amount={amount}"
+    )
     return tx.id
 
 
@@ -57,7 +57,7 @@ async def create_deposit_request(
         participant_id: int,
         amount: int
 ) -> int:
-    # Create a pending deposit transaction
+    """Create a pending deposit transaction and return its ID."""
     async with AsyncSessionLocal() as session:
         if amount <= 0:
             raise ValueError("Deposit amount must be positive.")
@@ -66,10 +66,12 @@ async def create_deposit_request(
             participant_id=participant_id,
             tx_type="cash_deposit",
             amount=amount,
-            status="pending"
+            status="pending",
         )
 
-    logger.info(f"Deposit request created: tx_id={tx.id}, participant_id={participant_id}, amount={amount}")
+    logger.info(
+        f"Deposit request created: tx_id={tx.id}, participant_id={participant_id}, amount={amount}"
+    )
     return tx.id
 
 
@@ -77,14 +79,16 @@ async def cancel_transaction(
         participant_id: int,
         tx_id: int
 ) -> None:
-    # Cancel a pending transaction belonging to the given participant
+    """Cancel a pending transaction belonging to the participant."""
     async with AsyncSessionLocal() as session:
         await update_transaction_status(
             session,
             await session.get(Transaction, tx_id),
             "canceled",
         )
-    logger.info(f"Transaction canceled by participant: tx_id={tx_id}, participant_id={participant_id}")
+    logger.info(
+        f"Transaction canceled by participant: tx_id={tx_id}, participant_id={participant_id}"
+    )
 
 # endregion --- Cash Transactions ---
 

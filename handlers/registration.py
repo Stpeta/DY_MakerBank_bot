@@ -67,7 +67,7 @@ async def process_registration_code(message: Message, state: FSMContext):
         await state.clear()
         return
 
-    # Успешно зарегистрирован
+    # Successfully registered
     await message.answer(
         LEXICON["registration_success"].format(name=part.name),
         parse_mode="HTML",

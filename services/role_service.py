@@ -4,14 +4,12 @@ from database.crud_participant import get_participants_by_telegram_id
 
 
 async def get_user_role(telegram_id: int) -> str:
-    """
-    Возвращает одну из ролей: "admin" | "participant" | "guest".
-    """
-    # Сначала проверяем, админ ли пользователь
+    """Return one of the roles: ``admin`` | ``participant`` | ``guest``."""
+    # First check if user is an admin
     if telegram_id in config.tg_bot.admin_ids:
         return "admin"
 
-    # Иначе — ищем участника с активным курсом
+    # Otherwise, look for a participant with an active course
     async with AsyncSessionLocal() as session:
         participants = await get_participants_by_telegram_id(
             session,

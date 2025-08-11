@@ -3,27 +3,20 @@ from lexicon.lexicon_en import LEXICON
 
 
 def render_course_info(course, stats: dict, savings_rate: float, loan_rate: float) -> str:
-    """
-    Собирает текст карточки курса.
-    Подставляет:
-      - course.created_at  (дата создания)
-      - course_status_emoji (в зависимости от course.is_active)
-      - status             (текст статуса из лексикона)
-      - остальное из stats и текущие ставки
-    """
-    # Выбираем эмодзи
+    """Build formatted course information text for display."""
+    # Choose emoji based on course activity
     course_status_emoji = (
         LEXICON["emoji_active"]
         if course.is_active
         else LEXICON["emoji_finished"]
     )
-    # Текст статуса
+    # Status text
     status = (
         LEXICON["status_active"]
         if course.is_active
         else LEXICON["status_finished"]
     )
-    # Собираем
+    # Compose final message
     return LEXICON["course_info"].format(
         name=course.name,
         description=course.description,
@@ -52,7 +45,7 @@ def render_participant_info(
     savings_rate: float,
     loan_rate: float,
 ) -> str:
-    """Собирает текст с балансом участника."""
+    """Compose a text snippet with the participant's balances."""
     return LEXICON["main_balance_text"].format(
         name=name,
         course_name=course_name,

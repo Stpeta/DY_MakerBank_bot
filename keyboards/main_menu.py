@@ -1,7 +1,7 @@
 from aiogram.types import BotCommand
 from lexicon.lexicon_en import LEXICON
 
-# Описания команд
+# Descriptions for common bot commands
 COMMON_COMMANDS = {
     "start": LEXICON["cmd_start"],
     # "register": LEXICON["cmd_register"],
@@ -9,9 +9,7 @@ COMMON_COMMANDS = {
 }
 
 def get_main_menu_commands() -> list[BotCommand]:
-    """
-    Возвращает список BotCommand для основного меню (общие команды).
-    """
+    """Return a list of ``BotCommand`` for the main menu."""
     return [
         BotCommand(command=f"/{cmd}", description=desc)
         for cmd, desc in COMMON_COMMANDS.items()

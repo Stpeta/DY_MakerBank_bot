@@ -85,6 +85,7 @@ async def participant_busy(message: Message):
 
 @participant_router.callback_query(F.data.startswith("participant:choose_course:"))
 async def choose_course(callback: CallbackQuery, state: FSMContext):
+    """Handle course selection when participant has multiple courses."""
     await callback.answer()
     _, _, pid = callback.data.split(":", 2)
     data = await state.get_data()
@@ -110,6 +111,7 @@ async def choose_course(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.callback_query(F.data == "participant:withdraw_cash")
 async def ask_withdraw(callback: CallbackQuery, state: FSMContext):
+    """Prompt participant to enter withdrawal amount."""
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["withdraw_amount_request"],
@@ -121,7 +123,7 @@ async def ask_withdraw(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_withdraw_amount))
 async def process_withdraw(message: Message, state: FSMContext):
-    # Handle withdrawal amount, create pending request, notify admin, await approval.
+    """Handle withdrawal amount, create request, notify admin, await approval."""
     text = message.text.strip()
     if not text.isdigit() or int(text) <= 0:
         return await message.answer(
@@ -182,6 +184,7 @@ async def process_withdraw(message: Message, state: FSMContext):
 
 @participant_router.callback_query(F.data == "participant:deposit_cash")
 async def ask_deposit(callback: CallbackQuery, state: FSMContext):
+    """Prompt participant to enter deposit amount."""
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["deposit_amount_request"],
@@ -255,6 +258,7 @@ async def process_deposit(message: Message, state: FSMContext):
 
 @participant_router.callback_query(F.data == "participant:to_savings")
 async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
+    """Prompt participant for amount to move into savings with lock warning."""
     await callback.answer()
     data = await state.get_data()
     course_id = data.get("course_id")
@@ -278,6 +282,7 @@ async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_deposit_amount))
 async def process_to_savings(message: Message, state: FSMContext):
+    """Move funds from main balance to savings."""
     text = message.text.strip()
     try:
         amount = Decimal(text)
@@ -317,6 +322,7 @@ async def process_to_savings(message: Message, state: FSMContext):
 
 @participant_router.callback_query(F.data == "participant:from_savings")
 async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
+    """Prompt participant for amount to withdraw from savings."""
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["from_savings_amount_request"],
@@ -328,6 +334,7 @@ async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_withdraw_amount))
 async def process_from_savings(message: Message, state: FSMContext):
+    """Withdraw funds from savings back to main balance."""
     text = message.text.strip()
     try:
         amount = Decimal(text)
@@ -370,6 +377,7 @@ async def process_from_savings(message: Message, state: FSMContext):
 
 @participant_router.callback_query(F.data == "participant:take_loan")
 async def ask_take_loan(callback: CallbackQuery, state: FSMContext):
+    """Prompt participant for loan amount to borrow."""
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["take_loan_amount_request"],
@@ -381,6 +389,7 @@ async def ask_take_loan(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_take_loan_amount))
 async def process_take_loan(message: Message, state: FSMContext):
+    """Issue a loan if within limits."""
     text = message.text.strip()
     try:
         amount = Decimal(text)
@@ -420,6 +429,7 @@ async def process_take_loan(message: Message, state: FSMContext):
 
 @participant_router.callback_query(F.data == "participant:repay_loan")
 async def ask_repay_loan(callback: CallbackQuery, state: FSMContext):
+    """Prompt participant for amount to repay the loan."""
     await callback.answer()
     await callback.message.edit_text(
         LEXICON["repay_loan_amount_request"],
@@ -431,6 +441,7 @@ async def ask_repay_loan(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_repay_loan_amount))
 async def process_repay_loan(message: Message, state: FSMContext):
+    """Repay part of an outstanding loan."""
     text = message.text.strip()
     try:
         amount = Decimal(text)

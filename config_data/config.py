@@ -19,6 +19,7 @@ class Config:
 
 
 def load_config(path: str | None = None) -> Config:
+    """Load configuration from environment variables or an ``.env`` file."""
     env = Env()
     env.read_env(path)
     return Config(
@@ -28,7 +29,8 @@ def load_config(path: str | None = None) -> Config:
         ),
         db=DB(
             url="sqlite+aiosqlite:///db/makerbank.db"
-            # url="sqlite+aiosqlite:////db/makerbank.db" -- for deploy must be "////"
+            # For deployment the path may require four leading slashes
+            # url="sqlite+aiosqlite:////db/makerbank.db"
         ),
         SERVICE_ACCOUNT_FILE="service_account.json",
         POSTMARK_API_TOKEN = env('POSTMARK_API_TOKEN')

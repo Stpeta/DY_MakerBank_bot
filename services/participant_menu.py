@@ -14,7 +14,7 @@ async def build_participant_menu(
         participant_name: str,
         course_name: str,
 ) -> tuple[str, InlineKeyboardMarkup]:
-    # Construct main menu text and keyboard for a participant
+    """Construct main menu text and keyboard for a participant."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         if not participant:

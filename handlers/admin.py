@@ -1,5 +1,3 @@
-# handlers/admin.py
-
 import logging
 from datetime import datetime
 
@@ -48,12 +46,14 @@ admin_router.message.filter(RoleFilter("admin"))
 
 @admin_router.message(Command("start"))
 async def admin_main(message: Message):
+    """Entry point for admins. Show main menu."""
     text, kb = await build_admin_menu(message.from_user.id)
     await message.answer(text, parse_mode="HTML", reply_markup=kb)
 
 
 @admin_router.callback_query(F.data.startswith("admin:course:info:"))
 async def admin_course_info(callback: CallbackQuery):
+    """Show information and actions for a specific course."""
     await callback.answer()
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
@@ -79,6 +79,7 @@ async def admin_course_info(callback: CallbackQuery):
 
 @admin_router.callback_query(F.data == "admin:back_to_main")
 async def admin_back(callback: CallbackQuery):
+    """Return to the admin main menu from any callback."""
     await callback.answer()
     text, kb = await build_admin_menu(callback.from_user.id)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
@@ -86,6 +87,7 @@ async def admin_back(callback: CallbackQuery):
 
 @admin_router.callback_query(F.data.startswith("admin:course:update_sheet:"))
 async def admin_course_update_sheet(callback: CallbackQuery):
+    """Trigger Google Sheet balance refresh for a course."""
     _, _, _, course_id = callback.data.split(":", 3)
     await update_course_balances(int(course_id))
     await callback.answer(LEXICON["sheet_updated"])
@@ -95,6 +97,7 @@ async def admin_course_update_sheet(callback: CallbackQuery):
     F.data.startswith("admin:course:finish:") & ~F.data.contains("finish_confirm")
 )
 async def admin_course_finish(callback: CallbackQuery):
+    """Ask admin to confirm finishing a course."""
     await callback.answer()
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
@@ -121,6 +124,7 @@ async def admin_course_finish(callback: CallbackQuery):
 
 @admin_router.callback_query(F.data.startswith("admin:course:finish_confirm:"))
 async def admin_course_finish_confirm(callback: CallbackQuery):
+    """Finalize course completion and notify participants."""
     _, _, _, course_id = callback.data.split(":", 3)
     async with AsyncSessionLocal() as session:
         course = await session.get(Course, int(course_id))
@@ -166,6 +170,7 @@ async def admin_course_finish_confirm(callback: CallbackQuery):
 
 
 async def _send_course_info(message: Message, course_id: int) -> None:
+    """Helper: send updated course info to the admin."""
     async with AsyncSessionLocal() as session:
         course = await session.get(Course, course_id)
         stats = await get_course_stats(session, course.id)
@@ -184,6 +189,7 @@ async def _send_course_info(message: Message, course_id: int) -> None:
 
 @admin_router.callback_query(F.data.startswith("admin:course:edit:"))
 async def admin_course_edit_start(callback: CallbackQuery, state: FSMContext):
+    """Prompt admin to edit a specific course attribute."""
     await callback.answer()
     _, _, _, field, course_id = callback.data.split(":", 4)
     prompts = {
@@ -215,6 +221,7 @@ async def admin_course_edit_start(callback: CallbackQuery, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_name))
 async def edit_course_name(message: Message, state: FSMContext):
+    """Update course name."""
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
@@ -227,6 +234,7 @@ async def edit_course_name(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_description))
 async def edit_course_description(message: Message, state: FSMContext):
+    """Update course description."""
     data = await state.get_data()
     course_id = data["course_id"]
     async with AsyncSessionLocal() as session:
@@ -239,6 +247,7 @@ async def edit_course_description(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_interest_day))
 async def edit_course_interest_day(message: Message, state: FSMContext):
+    """Update day of week when interest is applied."""
     text = message.text.strip()
     if not text.isdigit():
         await message.answer(LEXICON["course_value_invalid"], parse_mode="HTML")
@@ -259,6 +268,7 @@ async def edit_course_interest_day(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_interest_time))
 async def edit_course_interest_time(message: Message, state: FSMContext):
+    """Update time of day when interest is applied."""
     text = message.text.strip()
     try:
         datetime.strptime(text, "%H:%M")
@@ -277,6 +287,7 @@ async def edit_course_interest_time(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_savings_rate))
 async def edit_course_savings_rate(message: Message, state: FSMContext):
+    """Update weekly savings interest rate."""
     text = message.text.replace(",", ".").strip()
     try:
         rate = float(text)
@@ -293,6 +304,7 @@ async def edit_course_savings_rate(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_loan_rate))
 async def edit_course_loan_rate(message: Message, state: FSMContext):
+    """Update weekly loan interest rate."""
     text = message.text.replace(",", ".").strip()
     try:
         rate = float(text)
@@ -309,6 +321,7 @@ async def edit_course_loan_rate(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_max_loan))
 async def edit_course_max_loan(message: Message, state: FSMContext):
+    """Update maximum loan amount allowed for a participant."""
     text = message.text.replace(",", ".").strip()
     try:
         amount = float(text)
@@ -327,6 +340,7 @@ async def edit_course_max_loan(message: Message, state: FSMContext):
 
 @admin_router.message(StateFilter(CourseEdit.waiting_for_savings_lock))
 async def edit_course_savings_lock(message: Message, state: FSMContext):
+    """Update withdrawal delay in days for savings."""
     text = message.text.strip()
     try:
         days = int(text)
@@ -346,50 +360,58 @@ async def edit_course_savings_lock(message: Message, state: FSMContext):
 # endregion --- Editing course parameters ---
 
 
-# region --- FSM для /new_course ---
+# region --- FSM for /new_course ---
 
 @admin_router.callback_query(F.data == "admin:new_course")
 async def admin_new_course(callback: CallbackQuery, state: FSMContext):
+    """Entry point for new course creation via button."""
     await callback.answer()
     await start_course_flow(callback.message, state)
 
 
 @admin_router.message(Command("new_course"))
 async def cmd_new_course(message: Message, state: FSMContext):
+    """Entry point for new course creation via command."""
     await start_course_flow(message, state)
 
 
 @admin_router.message(StateFilter(CourseCreation.waiting_for_name))
 async def handle_course_name(message: Message, state: FSMContext):
+    """Process course name during creation flow."""
     await process_course_name(message, state)
 
 
 @admin_router.message(StateFilter(CourseCreation.waiting_for_description))
 async def handle_course_description(message: Message, state: FSMContext):
+    """Process course description during creation flow."""
     await process_course_description(message, state)
 
 
 @admin_router.message(StateFilter(CourseCreation.waiting_for_savings_rate))
 async def handle_course_savings_rate(message: Message, state: FSMContext):
+    """Process savings rate during creation flow."""
     await process_savings_rate(message, state)
 
 
 @admin_router.message(StateFilter(CourseCreation.waiting_for_loan_rate))
 async def handle_course_loan_rate(message: Message, state: FSMContext):
+    """Process loan rate during creation flow."""
     await process_loan_rate(message, state)
 
 
 @admin_router.message(StateFilter(CourseCreation.waiting_for_sheet))
 async def handle_course_sheet(message: Message, state: FSMContext):
+    """Process Google Sheet URL during creation flow."""
     await process_course_sheet(message, state)
 
 
-# endregion --- FSM для /new_course ---
+# endregion --- FSM for /new_course ---
 
 # region --- Approving/Declining Withdrawal/Deposit Requests ---
 
 @admin_router.callback_query(F.data.startswith("admin:tx:approve:"))
 async def admin_tx_approve(callback: CallbackQuery):
+    """Approve a pending transaction and notify participant."""
     await callback.answer()
     _, _, _, tx_id_str = callback.data.split(":", 3)
     tx_id = int(tx_id_str)
@@ -445,6 +467,7 @@ async def admin_tx_approve(callback: CallbackQuery):
 
 @admin_router.callback_query(F.data.startswith("admin:tx:decline:"))
 async def admin_tx_decline(callback: CallbackQuery):
+    """Decline a pending transaction and notify participant."""
     await callback.answer()
     _, _, _, tx_id_str = callback.data.split(":", 3)
     tx_id = int(tx_id_str)

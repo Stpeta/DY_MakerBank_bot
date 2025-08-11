@@ -1,3 +1,5 @@
+"""Finite State Machine definitions for bot workflows."""
+
 from aiogram.fsm.state import StatesGroup, State
 
 

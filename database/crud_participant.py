@@ -15,6 +15,7 @@ async def get_participants_by_telegram_id(
     telegram_id: int,
     course_is_active: Optional[bool] = None,
 ):
+    """Return participants registered to the given Telegram account."""
     query = (
         select(Participant)
         .options(selectinload(Participant.course))

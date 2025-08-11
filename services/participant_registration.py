@@ -1,15 +1,9 @@
-# services/participant_registration.py
-
 from database.base import AsyncSessionLocal
 from database.crud_participant import get_participant_by_code, register_participant
 
 
 async def register_by_code(code: str, telegram_id: int):
-    """
-    Пытаемся зарегистрировать участника с данным кодом
-    (перевести его из `guest` в `participant`).
-    Возвращает (participant, status), где status в {"ok","already","not_found"}.
-    """
+    """Register a participant using a code, returning (participant, status)."""
     async with AsyncSessionLocal() as session:
         part = await get_participant_by_code(session, code)
         if not part:

@@ -2,15 +2,13 @@
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.models import Course
 from lexicon.lexicon_en import LEXICON
 
 
 def main_menu_admin_kb() -> InlineKeyboardMarkup:
-    """
-    Нижняя строка клавиатуры админа: Только «Новый курс»
-    (Кнопка «О боте» убрана — вместо неё команда /about)
-    """
+    """Bottom row of admin keyboard containing only "New course" button."""
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
             text=LEXICON["button_new_course"],
@@ -20,9 +18,7 @@ def main_menu_admin_kb() -> InlineKeyboardMarkup:
 
 
 def courses_list_kb(courses: list[Course]) -> InlineKeyboardMarkup:
-    """
-    Список курсов админа, каждая кнопка — отдельная строка
-    """
+    """Keyboard with admin courses, one button per course."""
     keyboard = []
     for course in courses:
         emoji = (
