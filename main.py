@@ -1,13 +1,8 @@
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher
-from config_data import config
-from database.base import engine, Base
-from handlers.admin import admin_router
-from handlers.common import common_router
-from handlers.registration import registration_router
-from handlers.participant import participant_router
-from keyboards.main_menu import get_main_menu_commands
+
+from core.bot import create_bot, create_dispatcher, setup_main_menu
+from core.db import init_db
 from services.scheduler import interest_scheduler
 
 logging.basicConfig(
@@ -18,34 +13,18 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    # 1) Инициализация бота с уже загруженным конфигом
-    bot = Bot(token=config.tg_bot.token)
-    dp = Dispatcher()
+    """Main entry point for the bot."""
+    bot = create_bot()
+    dp = create_dispatcher()
 
-    # 2) Роутеры
-    dp.include_router(common_router)
-    dp.include_router(admin_router)
-    dp.include_router(participant_router)
-    dp.include_router(registration_router)
+    await setup_main_menu(bot)
+    await init_db()
 
-    # 3) Установка общего меню команд
-    commands = get_main_menu_commands()
-    await bot.set_my_commands(commands)
-    logger.info("Main menu commands set: %s", commands)
-
-    # 4) Создание таблиц в БД
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created or already exist.")
-
-    # 5) Запуск периодического начисления процентов
     asyncio.create_task(interest_scheduler(bot))
 
-    # 6) Старт polling
     await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
     asyncio.run(main())
     logger.info("Bot started successfully.")
-
