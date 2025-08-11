@@ -86,7 +86,7 @@ async def admin_back(callback: CallbackQuery):
 
 @admin_router.callback_query(F.data.startswith("admin:course:update_sheet:"))
 async def admin_course_update_sheet(callback: CallbackQuery):
-    _, _, _, _, course_id = callback.data.split(":", 4)
+    _, _, _, course_id = callback.data.split(":", 3)
     await update_course_balances(int(course_id))
     await callback.answer(LEXICON["sheet_updated"])
 
@@ -485,7 +485,7 @@ async def admin_tx_decline(callback: CallbackQuery):
     await callback.message.edit_text(
         (
             f"{callback.message.text}\n\n"
-            f"{LEXICON['admin_tx_approved_admin'].format(tx_id=tx_id, course_name=course_name, name=participant.name)}"
+            f"{LEXICON['admin_tx_declined_admin'].format(tx_id=tx_id, course_name=course_name, name=participant.name)}"
         ),
         parse_mode="HTML",
         reply_markup=None,

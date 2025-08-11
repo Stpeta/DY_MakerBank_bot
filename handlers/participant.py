@@ -489,7 +489,7 @@ async def user_cancel_cash_request(callback: CallbackQuery, state: FSMContext):
             await send_message_to_course_creator(
                 bot=callback.bot,
                 course_id=course_id,
-                text=LEXICON["admin_tx_cancelled_admin"].format(
+                text=LEXICON["admin_tx_cancelled_participant"].format(
                     course_name=course_name,
                     name=participant_name,
                     tx_id=tx_id,
