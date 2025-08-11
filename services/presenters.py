@@ -57,29 +57,6 @@ def render_participant_info(
         total=balance + savings - loan,
     )
 
-
-def render_participant_info(
-    name: str,
-    course_name: str,
-    balance,
-    savings,
-    loan,
-    savings_rate: float,
-    loan_rate: float,
-) -> str:
-    """Собирает текст с балансом участника."""
-    return LEXICON["main_balance_text"].format(
-        name=name,
-        course_name=course_name,
-        balance=balance,
-        savings=savings,
-        loan=loan,
-        savings_rate=savings_rate,
-        loan_rate=loan_rate,
-        total=balance + savings - loan,
-    )
-
-
 def render_admin_menu(active: int, finished: int) -> str:
     """Generate text for the admin main menu based on course counts."""
     if active + finished == 0:
