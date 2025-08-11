@@ -36,7 +36,7 @@ from services.course_creation_flow import (
     process_course_sheet,
 )
 from services.participant_menu import build_participant_menu
-from services.presenters import render_course_info
+from services.presenters import render_course_info, render_participant_info
 from services.google_sheets import update_course_balances
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
@@ -142,14 +142,14 @@ async def admin_course_finish_confirm(callback: CallbackQuery):
             LEXICON["finish_participant_notify"].format(name=course.name),
             parse_mode="HTML",
         )
-        balance_text = LEXICON["main_balance_text"].format(
-            name=participant.name,
-            course_name=course.name,
-            balance=participant.balance,
-            savings=participant.savings_balance,
-            loan=participant.loan_balance,
-            savings_rate=savings_rate,
-            loan_rate=loan_rate,
+        balance_text = render_participant_info(
+            participant.name,
+            course.name,
+            participant.balance,
+            participant.savings_balance,
+            participant.loan_balance,
+            savings_rate,
+            loan_rate,
         )
         await callback.bot.send_message(
             participant.telegram_id,

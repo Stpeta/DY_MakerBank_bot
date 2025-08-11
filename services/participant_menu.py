@@ -6,7 +6,7 @@ from database.crud_courses import get_current_rate
 
 from keyboards.participant import main_menu_participant_kb
 
-from lexicon.lexicon_en import LEXICON
+from services.presenters import render_participant_info
 
 
 async def build_participant_menu(
@@ -27,14 +27,14 @@ async def build_participant_menu(
         savings_rate = await get_current_rate(session, participant.course_id, "savings")
         loan_rate = await get_current_rate(session, participant.course_id, "loan")
 
-    text = LEXICON["main_balance_text"].format(
-        name=participant_name,
-        course_name=course_name,
-        balance=balance,
-        savings=savings,
-        loan=loan,
-        savings_rate=savings_rate,
-        loan_rate=loan_rate
+    text = render_participant_info(
+        participant_name,
+        course_name,
+        balance,
+        savings,
+        loan,
+        savings_rate,
+        loan_rate,
     )
     kb = main_menu_participant_kb()
     return text, kb
