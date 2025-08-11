@@ -2,8 +2,10 @@
 
 import re
 import gspread
+from gspread.utils import rowcol_to_a1
 from oauth2client.service_account import ServiceAccountCredentials
 from config_data import config
+from database.models import Participant, Transaction
 
 # Авторизация
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -57,4 +59,47 @@ def mark_registered(sheet_url: str, email: str) -> None:
         if row.get("Email", "").strip().lower() == email.lower():
             sheet.update_cell(idx, 4, "TRUE")
             break
+
+
+def update_course_sheet(
+    sheet_url: str,
+    participants: list[Participant],
+    tx_map: dict[int, list[Transaction]],
+) -> None:
+    """Update balances and cash operations of participants in the course sheet."""
+    ss_id = _normalize_url(sheet_url)
+    sheet = _gs_client.open_by_key(ss_id).sheet1
+
+    # headers
+    sheet.update("F1:I1", [["Total", "Balance", "Savings", "Loan"]])
+    sheet.batch_clear(["F2:ZZ"])
+
+    participants_map = {p.email.lower(): p for p in participants}
+    records = sheet.get_all_records()
+    for row_idx, row in enumerate(records, start=2):
+        email = row.get("Email", "").strip().lower()
+        p = participants_map.get(email)
+        if not p:
+            continue
+
+        balance = float(p.balance)
+        savings = float(p.savings_balance)
+        loan = float(p.loan_balance)
+        total = balance + savings - loan
+        sheet.update(f"F{row_idx}:I{row_idx}", [[total, balance, savings, loan]])
+
+        txs = tx_map.get(p.id, [])
+        col = 10  # column J
+        for tx in txs:
+            amount = float(tx.amount)
+            color = {"red": 0.0, "green": 0.55, "blue": 0.0}
+            if tx.type == "cash_withdrawal":
+                amount = -amount
+                color = {"red": 0.55, "green": 0.0, "blue": 0.0}
+            amount_str = f"{amount:.2f}".rstrip("0").rstrip(".")
+            text = f"{tx.created_at:%d.%m} {amount_str}"
+            cell = rowcol_to_a1(row_idx, col)
+            sheet.update(cell, text)
+            sheet.format(cell, {"textFormat": {"foregroundColor": color}})
+            col += 1
 

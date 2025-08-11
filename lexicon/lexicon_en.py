@@ -83,6 +83,7 @@ LEXICON = {
     "button_edit_loan_rate": "💸 Loan rate",
     "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
+    "button_update_sheet": "🔄 Update Spreadsheet",
 
     # Emojis indicating course status
     "emoji_active": "🟢",  # Active course
@@ -101,7 +102,8 @@ LEXICON = {
         "📆 Interest payout: {interest_day} {interest_time} UTC\n\n"
         "👥 Total participants: {total}\n"
         "📝 Registered: {registered}\n"
-        "💳 Average balance: {avg_balance:.2f}"
+        "💳 Average balance: {avg_balance:.2f}\n"
+        "📄 Sheet: {sheet_url}"
     ),
 
     # Status Values

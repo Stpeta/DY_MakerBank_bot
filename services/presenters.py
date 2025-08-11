@@ -40,4 +40,5 @@ def render_course_info(course, stats: dict, savings_rate: float, loan_rate: floa
         savings_delay=course.savings_withdrawal_delay,
         interest_day=day_name[course.interest_day],
         interest_time=course.interest_time,
+        sheet_url=course.sheet_url,
     )

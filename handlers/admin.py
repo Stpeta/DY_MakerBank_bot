@@ -37,6 +37,7 @@ from services.course_creation_flow import (
 )
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info
+from services.google_sheets import update_course_sheet
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
 
@@ -74,6 +75,35 @@ async def admin_course_info(callback: CallbackQuery):
         ]])
 
     await callback.message.edit_text(text, reply_markup=kb)
+
+
+@admin_router.callback_query(F.data.startswith("admin:course:update_sheet:"))
+async def admin_course_update_sheet(callback: CallbackQuery):
+    _, _, _, course_id = callback.data.split(":", 3)
+    async with AsyncSessionLocal() as session:
+        course = await session.get(Course, int(course_id))
+        participants_res = await session.execute(
+            select(Participant).where(Participant.course_id == course.id)
+        )
+        participants = participants_res.scalars().all()
+        tx_res = await session.execute(
+            select(Transaction)
+            .join(Participant)
+            .where(
+                Participant.course_id == course.id,
+                Transaction.status == "completed",
+                Transaction.type.in_(["cash_deposit", "cash_withdrawal"]),
+            )
+            .order_by(Transaction.created_at)
+        )
+        tx_list = tx_res.scalars().all()
+
+    tx_map: dict[int, list[Transaction]] = {}
+    for tx in tx_list:
+        tx_map.setdefault(tx.participant_id, []).append(tx)
+
+    update_course_sheet(course.sheet_url, participants, tx_map)
+    await callback.answer("Spreadsheet updated")
 
 
 @admin_router.callback_query(F.data == "admin:back_to_main")
