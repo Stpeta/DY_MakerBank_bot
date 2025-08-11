@@ -31,6 +31,7 @@ def render_course_info(course, stats: dict, savings_rate: float, loan_rate: floa
         created_at=course.created_at,
         course_status_emoji=course_status_emoji,
         status=status,
+        sheet_url=course.sheet_url or "-",
         total=stats["total"],
         registered=stats["registered"],
         avg_balance=stats["avg_balance"],

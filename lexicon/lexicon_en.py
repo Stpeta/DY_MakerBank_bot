@@ -83,6 +83,7 @@ LEXICON = {
     "button_edit_loan_rate": "💸 Loan rate",
     "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
+    "button_update_sheet": "🔄 Update Spreadsheet",
 
     # Emojis indicating course status
     "emoji_active": "🟢",  # Active course
@@ -93,7 +94,8 @@ LEXICON = {
         "📖 Title: {name}\n"
         "📝 Description: {description}\n"
         "🗓 Created: {created_at:%d.%m.%Y}\n"
-        "{course_status_emoji} Status: {status}\n\n"
+        "{course_status_emoji} Status: {status}\n"
+        "📄 Spreadsheet: {sheet_url}\n\n"
         "💹 Savings rate: {savings_rate}%\n"
         "💸 Loan rate: {loan_rate}%\n"
         "⬆️ Max loan: {max_loan}\n"
@@ -107,6 +109,8 @@ LEXICON = {
     # Status Values
     "status_active": "active",  # Course is ongoing
     "status_finished": "finished",  # Course has ended
+
+    "sheet_updated": "✅ Spreadsheet updated.",
 
     # endregion --- Admin Panel ---
 

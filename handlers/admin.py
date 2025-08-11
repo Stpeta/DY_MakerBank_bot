@@ -37,6 +37,7 @@ from services.course_creation_flow import (
 )
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info
+from services.google_sheets import update_course_balances
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
 
@@ -81,6 +82,13 @@ async def admin_back(callback: CallbackQuery):
     await callback.answer()
     text, kb = await build_admin_menu(callback.from_user.id)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+@admin_router.callback_query(F.data.startswith("admin:course:update_sheet:"))
+async def admin_course_update_sheet(callback: CallbackQuery):
+    _, _, _, _, course_id = callback.data.split(":", 4)
+    await update_course_balances(int(course_id))
+    await callback.answer(LEXICON["sheet_updated"])
 
 
 @admin_router.callback_query(

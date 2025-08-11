@@ -1,9 +1,15 @@
 # services/google_sheets.py
 
 import re
+from decimal import Decimal
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from config_data import config
+from database.base import AsyncSessionLocal
+from database.models import Course, Participant
 
 # Авторизация
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -57,4 +63,51 @@ def mark_registered(sheet_url: str, email: str) -> None:
         if row.get("Email", "").strip().lower() == email.lower():
             sheet.update_cell(idx, 4, "TRUE")
             break
+
+
+async def _collect_balance_data(
+    session: AsyncSession, course_id: int
+) -> tuple[str, dict[str, tuple[float, float, float, float]]]:
+    """Собирает данные о балансах участников курса."""
+    course = await session.get(Course, course_id)
+    result = await session.execute(
+        select(Participant).where(Participant.course_id == course_id)
+    )
+    participants = result.scalars().all()
+
+    data: dict[str, tuple[float, float, float, float]] = {}
+    for p in participants:
+        balance = Decimal(p.balance) if p.balance is not None else Decimal("0")
+        savings = Decimal(p.savings_balance) if p.savings_balance is not None else Decimal("0")
+        loan = Decimal(p.loan_balance) if p.loan_balance is not None else Decimal("0")
+        total = balance + savings - loan
+        data[p.email.strip().lower()] = (
+            float(total), float(balance), float(savings), float(loan)
+        )
+
+    return course.sheet_url, data
+
+
+def _write_balances_to_sheet(
+    sheet_url: str, data: dict[str, tuple[float, float, float, float]]
+) -> None:
+    """Записывает балансы в гугл-таблицу курса."""
+    ss_id = _normalize_url(sheet_url)
+    sheet = _gs_client.open_by_key(ss_id).sheet1
+    # Заголовки
+    sheet.update("F1:I1", [["Total", "Balance", "Savings", "Loan"]])
+    records = sheet.get_all_records()
+    for idx, row in enumerate(records, start=2):
+        email = row.get("Email", "").strip().lower()
+        if email in data:
+            sheet.update(f"F{idx}:I{idx}", [list(data[email])])
+
+
+async def update_course_balances(course_id: int) -> None:
+    """Обновляет гугл-таблицу курса балансами участников."""
+    async with AsyncSessionLocal() as session:
+        sheet_url, data = await _collect_balance_data(session, course_id)
+
+    if sheet_url:
+        _write_balances_to_sheet(sheet_url, data)
 
