@@ -89,8 +89,8 @@ def prepare_course_sheet(sheet_url: str) -> None:
     set_column_width(sheet, "E:E", 70)
     rule = DataValidationRule(BooleanCondition("BOOLEAN"), showCustomUi=True)
     set_data_validation_for_cell_range(sheet, "E2:E", rule)
-    sheet.protect(
-        "D:I",
+    sheet.add_protected_range(
+        name="D:I",
         description=LEXICON["sheet_protected_warning"],
         warning_only=True,
     )

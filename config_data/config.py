@@ -35,5 +35,5 @@ def load_config(path: str | None = None) -> Config:
         ),
         SERVICE_ACCOUNT_FILE="service_account.json",
         POSTMARK_API_TOKEN=env('POSTMARK_API_TOKEN'),
-        SHEET_EDITOR_EMAIL="service_bot@email.com",
+        SHEET_EDITOR_EMAIL="makerbank@dmitryyakovlev.iam.gserviceaccount.com",
     )
