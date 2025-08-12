@@ -42,7 +42,8 @@ LEXICON = {
     # Confirmation once a course is created
     "course_created": (
         "✅ Course “{name}” created! Add participants to this table, then press "
-        "“Add Users & Check Registration” in the course card."
+        "“Add Users & Check Registration” in the course card.\n"
+        "Press /start to begin managing your courses."
     ),
 
     # Finish Course Flow
@@ -58,7 +59,6 @@ LEXICON = {
 
     # "participant_greeting": "Welcome! Available commands: /wallet, /deposit, /withdraw",  # Initial greeting
     "registration_code_request": "Enter your registration code:",  # Ask for code
-    # "registration_welcome": 'To join a course, enter your registration code:',  # /start flow
     "registration_not_found": "❌ Code not found. Please check and try again.",  # Invalid code
     "registration_already": "⚠️ You are already registered, {name}.",  # Already registered
     "registration_course_finished": "🛑 Course “{name}” is already finished. Registration is closed.",
@@ -132,9 +132,10 @@ LEXICON = {
     "course_regcodes_error": (
         "❌ Failed to send registration codes."
     ),
-    "email_regcode_subject": "Daily Maker Bank Bot: {course}",
+    "email_regcode_subject": "🏫 {course} MakerBank Registration Code",
     "email_regcode_body": (
-        "Hello {name}! Please use registration code {code} to register in the bot."
+        "Hello {name}!<br><br>"
+        "Please use registration code {code} to register in the tg bot DY_MakerBank_bot."
     ),
 
     # Column headers for course spreadsheets
