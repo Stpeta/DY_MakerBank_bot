@@ -36,7 +36,10 @@ from services.course_creation_flow import (
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info, render_participant_info
 from services.google_sheets import update_course_balances
-from services.course_service import sync_course_participants
+from services.course_service import (
+    sync_course_participants,
+    send_registration_codes,
+)
 from config_data import config
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
@@ -112,6 +115,22 @@ async def admin_course_sync(callback: CallbackQuery):
         return
     await callback.message.answer(
         LEXICON["course_users_synced"].format(new=new)
+    )
+
+
+@admin_router.callback_query(F.data.startswith("admin:course:send_regcodes:"))
+async def admin_course_send_regcodes(callback: CallbackQuery):
+    """Send registration codes to unregistered participants."""
+    await callback.answer()
+    _, _, _, course_id = callback.data.split(":", 3)
+    try:
+        count = await send_registration_codes(int(course_id))
+    except Exception:
+        logger.exception("Failed to send registration codes")
+        await callback.message.answer(LEXICON["course_regcodes_error"])
+        return
+    await callback.message.answer(
+        LEXICON["course_regcodes_sent"].format(count=count)
     )
 
 

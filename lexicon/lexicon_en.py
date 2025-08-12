@@ -93,6 +93,7 @@ LEXICON = {
     "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
     "button_sync_users": "👥 Add Users & Check Registration",
+    "button_send_regcodes": "✉️ Send RegCodes",
     "button_update_sheet": "🔄 Update Spreadsheet",
 
     # Emojis indicating course status
@@ -123,6 +124,16 @@ LEXICON = {
     "sheet_updated": "✅ Spreadsheet updated.",
     "course_users_synced": (
         "✅ Processed. {new} new participants added. Registration statuses updated."
+    ),
+    "course_regcodes_sent": (
+        "✅ Sent registration codes to {count} participants."
+    ),
+    "course_regcodes_error": (
+        "❌ Failed to send registration codes."
+    ),
+    "email_regcode_subject": "Daily Maker Bank Bot: {course}",
+    "email_regcode_body": (
+        "Hello {name}! Please use registration code {code} to register in the bot."
     ),
 
     # Column headers for course spreadsheets

@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from sqlalchemy import select
 
 from database.crud_courses import create_course, add_participants, set_rate
@@ -5,7 +7,10 @@ from services.utils import gen_registration_code
 from database.base import AsyncSessionLocal
 from database.models import Course, Participant
 from services.google_sheets import fetch_students, write_registration_codes, mark_registered
+from services.email_service import send_registration_code
 from lexicon.lexicon_en import LEXICON
+
+logger = logging.getLogger(__name__)
 
 
 async def create_course_with_participants(
@@ -93,3 +98,39 @@ async def sync_course_participants(course_id: int) -> int:
     for email in registered_emails:
         mark_registered(course.sheet_url, email)
     return len(codes_map)
+
+
+async def send_registration_codes(course_id: int) -> int:
+    """Email registration codes to unregistered participants.
+
+    Args:
+        course_id: Identifier of the course.
+
+    Returns:
+        Number of emails successfully sent.
+    """
+    async with AsyncSessionLocal() as session:
+        course = await session.get(Course, course_id)
+        result = await session.execute(
+            select(
+                Participant.email,
+                Participant.registration_code,
+                Participant.name,
+            ).where(
+                Participant.course_id == course_id,
+                Participant.is_registered == False,
+            )
+        )
+        targets = result.all()
+
+    sent = 0
+    for email, code, name in targets:
+        try:
+            await asyncio.to_thread(
+                send_registration_code, email, code, course.name, name
+            )
+            logger.info("Registration code sent to %s", email)
+            sent += 1
+        except Exception:
+            logger.exception("Failed to send registration code to %s", email)
+    return sent
