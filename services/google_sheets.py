@@ -1,8 +1,19 @@
 # services/google_sheets.py
 
+import logging
 import re
 from decimal import Decimal
+
 import gspread
+from gspread_formatting import (
+    CellFormat,
+    Color,
+    DataValidationRule,
+    BooleanCondition,
+    format_cell_ranges,
+    set_column_width,
+    set_data_validation_for_cell_range,
+)
 from oauth2client.service_account import ServiceAccountCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config_data import config
 from database.base import AsyncSessionLocal
 from database.models import Course, Participant
+from lexicon.lexicon_en import LEXICON
 
 # Authorization
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -17,6 +29,7 @@ _creds = ServiceAccountCredentials.from_json_keyfile_name(
     config.SERVICE_ACCOUNT_FILE, SCOPES
 )
 _gs_client = gspread.authorize(_creds)
+logger = logging.getLogger(__name__)
 
 # Regex for validating the sheet URL
 _SHEET_URL_RE = re.compile(r"^https?://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)")
@@ -28,35 +41,63 @@ def _normalize_url(url: str) -> str:
     m = _SHEET_URL_RE.match(url)
     return m.group(1) if m else url
 
-def fetch_students(sheet_url: str) -> list[tuple[str, str]]:
-    """Read first worksheet and return a list of (name, email)."""
+def fetch_students(sheet_url: str) -> list[dict[str, str]]:
+    """Read first worksheet and return rows as dictionaries."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
-    rows = sheet.get_all_values()[1:]  # skip header row
-    return [(r[0].strip(), r[1].strip()) for r in rows if len(r) >= 2]
+    return sheet.get_all_records()
 
-def write_registration_codes(
-    sheet_url: str,
-    codes: dict[str, str]
-) -> None:
-    """Write registration codes to column C for each email."""
+def write_registration_codes(sheet_url: str, codes: dict[str, str]) -> None:
+    """Write registration codes to column D for each email."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
-        email = row.get("Email", "").strip()
+        email = row.get(LEXICON["sheet_header_email"], "").strip()
         if email in codes:
-            sheet.update_cell(idx, 3, codes[email])
+            sheet.update_cell(idx, 4, codes[email])
 
 def mark_registered(sheet_url: str, email: str) -> None:
-    """Mark column D ("Registered") as TRUE for the given email."""
+    """Mark column E ("Registered") as TRUE for the given email."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
-        if row.get("Email", "").strip().lower() == email.lower():
-            sheet.update_cell(idx, 4, "TRUE")
+        if row.get(LEXICON["sheet_header_email"], "").strip().lower() == email.lower():
+            sheet.update_cell(idx, 5, "TRUE")
             break
+
+
+def prepare_course_sheet(sheet_url: str) -> None:
+    """Prepare a new spreadsheet for course usage."""
+    ss_id = _normalize_url(sheet_url)
+    sheet = _gs_client.open_by_key(ss_id).sheet1
+    sheet.clear()
+    sheet.freeze(rows=1)
+    headers = [
+        LEXICON["sheet_header_name"],
+        LEXICON["sheet_header_email"],
+        LEXICON["sheet_header_comment"],
+        LEXICON["sheet_header_reg_code"],
+        LEXICON["sheet_header_registered"],
+        LEXICON["sheet_header_total"],
+        LEXICON["sheet_header_wallet"],
+        LEXICON["sheet_header_savings"],
+        LEXICON["sheet_header_loan"],
+    ]
+    sheet.update("A1:I1", [headers])
+    set_column_width(sheet, "E:E", 70)
+    rule = DataValidationRule(BooleanCondition("BOOLEAN"), showCustomUi=True)
+    set_data_validation_for_cell_range(sheet, "E2:E", rule)
+    sheet.protect(
+        "D:I",
+        description=LEXICON["sheet_protected_warning"],
+        warning_only=True,
+    )
+    format_cell_ranges(
+        sheet,
+        [("D:I", CellFormat(backgroundColor=Color(1, 0.9, 0.9)))],
+    )
 
 
 async def _collect_balance_data(
@@ -89,10 +130,18 @@ def _write_balances_to_sheet(
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     # Header row
-    sheet.update("F1:I1", [["Total", "Wallet", "Savings", "Loan"]])
+    sheet.update(
+        "F1:I1",
+        [[
+            LEXICON["sheet_header_total"],
+            LEXICON["sheet_header_wallet"],
+            LEXICON["sheet_header_savings"],
+            LEXICON["sheet_header_loan"],
+        ]],
+    )
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
-        email = row.get("Email", "").strip().lower()
+        email = row.get(LEXICON["sheet_header_email"], "").strip().lower()
         if email in data:
             sheet.update(f"F{idx}:I{idx}", [list(data[email])])
 

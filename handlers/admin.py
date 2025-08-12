@@ -36,6 +36,8 @@ from services.course_creation_flow import (
 from services.participant_menu import build_participant_menu
 from services.presenters import render_course_info, render_participant_info
 from services.google_sheets import update_course_balances
+from services.course_service import sync_course_participants
+from config_data import config
 from states.fsm import CourseCreation, CourseEdit
 from sqlalchemy import select
 
@@ -91,6 +93,26 @@ async def admin_course_update_sheet(callback: CallbackQuery):
     _, _, _, course_id = callback.data.split(":", 3)
     await update_course_balances(int(course_id))
     await callback.answer(LEXICON["sheet_updated"])
+
+
+@admin_router.callback_query(F.data.startswith("admin:course:sync:"))
+async def admin_course_sync(callback: CallbackQuery):
+    """Add new participants and mark registrations."""
+    await callback.answer()
+    _, _, _, course_id = callback.data.split(":", 3)
+    try:
+        new = await sync_course_participants(int(course_id))
+    except Exception:
+        logger.exception("Failed to sync participants")
+        await callback.message.answer(
+            LEXICON["course_sheet_setup_error"].format(
+                email=config.SHEET_EDITOR_EMAIL
+            )
+        )
+        return
+    await callback.message.answer(
+        LEXICON["course_users_synced"].format(new=new)
+    )
 
 
 @admin_router.callback_query(

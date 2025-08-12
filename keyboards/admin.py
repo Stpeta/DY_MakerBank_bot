@@ -87,6 +87,12 @@ def course_actions_kb(course_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
+                text=LEXICON["button_sync_users"],
+                callback_data=f"admin:course:sync:{course_id}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
                 text=LEXICON["button_update_sheet"],
                 callback_data=f"admin:course:update_sheet:{course_id}"
             ),

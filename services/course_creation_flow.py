@@ -1,13 +1,15 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from states.fsm import CourseCreation
-from services.google_sheets import (
-    is_valid_sheet_url,
-    fetch_students,
-    write_registration_codes,
-)
-from services.course_service import create_course_with_participants
+from services.google_sheets import is_valid_sheet_url, prepare_course_sheet
+from database.crud_courses import create_course, set_rate
+from config_data import config
 from lexicon.lexicon_en import LEXICON
+from database.base import AsyncSessionLocal
+
+logger = logging.getLogger(__name__)
 
 
 async def start_course_flow(message: types.Message, state: FSMContext) -> None:
@@ -59,46 +61,46 @@ async def process_loan_rate(message: types.Message, state: FSMContext) -> None:
         await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
         return
     await state.update_data(loan_rate=rate)
-    await message.answer(LEXICON["course_sheet_request"], parse_mode="HTML")
+    await message.answer(
+        LEXICON["course_sheet_request"].format(email=config.SHEET_EDITOR_EMAIL),
+        parse_mode="HTML",
+    )
     await state.set_state(CourseCreation.waiting_for_sheet)
 
 
 async def process_course_sheet(message: types.Message, state: FSMContext) -> None:
-    """Validate sheet URL, import participants, create course, and respond."""
+    """Validate sheet URL, prepare it, create course, and respond."""
     sheet_url = message.text.strip()
     if not is_valid_sheet_url(sheet_url):
         await message.answer(LEXICON["course_sheet_invalid_format"], parse_mode="HTML")
         return
 
-    # 1) read participants
     try:
-        participants_raw = fetch_students(sheet_url)
+        prepare_course_sheet(sheet_url)
     except Exception:  # gspread.exceptions.APIError etc.
-        await message.answer(LEXICON["course_sheet_unreachable"], parse_mode="HTML")
+        logger.exception("Failed to prepare sheet")
+        await message.answer(
+            LEXICON["course_sheet_setup_error"].format(
+                email=config.SHEET_EDITOR_EMAIL
+            ),
+            parse_mode="HTML",
+        )
         return
 
-    if not participants_raw:
-        await message.answer(LEXICON["course_sheet_empty"], parse_mode="HTML")
-        return
-
-    # 2) service creates course and returns code map
     data = await state.get_data()
-    course, codes_map = await create_course_with_participants(
-        name=data["name"],
-        description=data["description"],
-        creator_id=message.from_user.id,
-        sheet_url=sheet_url,
-        participants_raw=participants_raw,
-        savings_rate=data.get("savings_rate", 0),
-        loan_rate=data.get("loan_rate", 0),
-    )
+    async with AsyncSessionLocal() as session:
+        course = await create_course(
+            session,
+            name=data["name"],
+            description=data["description"],
+            creator_id=message.from_user.id,
+            sheet_url=sheet_url,
+        )
+        await set_rate(session, course.id, "savings", data.get("savings_rate", 0))
+        await set_rate(session, course.id, "loan", data.get("loan_rate", 0))
 
-    # 3) write registration codes back to Google Sheet
-    write_registration_codes(sheet_url, codes_map)
-
-    # 4) final response
     await message.answer(
-        LEXICON["course_created"].format(name=course.name, count=len(codes_map)),
+        LEXICON["course_created"].format(name=course.name),
         parse_mode="HTML",
     )
     await state.clear()

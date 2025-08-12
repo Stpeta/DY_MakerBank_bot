@@ -21,20 +21,29 @@ LEXICON = {
     "course_interest_day_request": "Enter interest payout weekday (0=Monday ... 6=Sunday):",
     "course_interest_time_request": "Enter interest payout time (HH:MM, UTC):",
     "course_value_invalid": "Please enter a valid number.",
-    "course_sheet_request": "Please send the Google Sheets link containing the list of participants:",
-    # Ask for sheet URL
+    "course_sheet_request": (
+        "Create a new blank Google Spreadsheet, add {email} as an editor and send the link here.\n"
+        "⚠️ All data on the first sheet will be removed."
+    ),  # Ask for sheet URL
 
     # Errors related to Google Sheets
     "course_sheet_invalid": "❌ Failed to read data from Google Sheets. Please check the link and try again.",
     "course_sheet_invalid_format": "❗️ It seems this is not a Google Sheets link. Please send a valid link.",
-    "course_sheet_unreachable": "❌ Could not access the sheet. Make sure you have granted access to the service "
-                                "account.",
-    "course_sheet_empty": "⚠️ The sheet is empty or doesn't contain the columns 'Name' and 'Email'. Please check its "
-                          "contents.",
+    "course_sheet_unreachable": (
+        "❌ Could not access the sheet. Make sure you have granted access to the service account."
+    ),
+    "course_sheet_empty": (
+        "⚠️ The sheet is empty or doesn't contain the columns 'Name' and 'Email'. Please check its contents."
+    ),
+    "course_sheet_setup_error": (
+        "Ensure you added {email} as an editor and send the link again."
+    ),
 
     # Confirmation once a course is created
-    "course_created": "✅ Course “{name}” created, {count} participants added. Registration codes have been written to "
-                      "the Google Sheets.",
+    "course_created": (
+        "✅ Course “{name}” created! Add participants to this table, then press "
+        "“Add Users & Check Registration” in the course card."
+    ),
 
     # Finish Course Flow
     "finish_no_active": "You have no active courses to finish.",
@@ -83,6 +92,7 @@ LEXICON = {
     "button_edit_loan_rate": "💸 Loan rate",
     "button_edit_max_loan": "⬆️ Max loan",
     "button_edit_savings_lock": "⏳ Savings lock",
+    "button_sync_users": "👥 Add Users & Check Registration",
     "button_update_sheet": "🔄 Update Spreadsheet",
 
     # Emojis indicating course status
@@ -111,6 +121,23 @@ LEXICON = {
     "status_finished": "finished",  # Course has ended
 
     "sheet_updated": "✅ Spreadsheet updated.",
+    "course_users_synced": (
+        "✅ Processed. {new} new participants added. Registration statuses updated."
+    ),
+
+    # Column headers for course spreadsheets
+    "sheet_header_name": "Name",
+    "sheet_header_email": "Email",
+    "sheet_header_comment": "Comment",
+    "sheet_header_reg_code": "RegCode",
+    "sheet_header_registered": "Registered",
+    "sheet_header_total": "Total",
+    "sheet_header_wallet": "Wallet",
+    "sheet_header_savings": "Savings",
+    "sheet_header_loan": "Loan",
+    "sheet_protected_warning": (
+        "Do not edit this unless you absolutely know what you are doing."
+    ),
 
     # endregion --- Admin Panel ---
 
