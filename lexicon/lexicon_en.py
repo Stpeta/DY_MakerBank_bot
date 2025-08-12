@@ -47,7 +47,7 @@ LEXICON = {
 
     # region --- Participant Registration ---
 
-    # "participant_greeting": "Welcome! Available commands: /balance, /deposit, /withdraw",  # Initial greeting
+    # "participant_greeting": "Welcome! Available commands: /wallet, /deposit, /withdraw",  # Initial greeting
     "registration_code_request": "Enter your registration code:",  # Ask for code
     # "registration_welcome": 'To join a course, enter your registration code:',  # /start flow
     "registration_not_found": "❌ Code not found. Please check and try again.",  # Invalid code
@@ -103,7 +103,7 @@ LEXICON = {
         "📆 Interest payout: {interest_day} {interest_time} UTC\n\n"
         "👥 Total participants: {total}\n"
         "📝 Registered: {registered}\n"
-        "💳 Average balance: {avg_balance:.2f}"
+        "💳 Average wallet balance: {avg_wallet_balance:.2f}"
     ),
 
     # Status Values
@@ -119,11 +119,11 @@ LEXICON = {
     # Participant Main Menu and Display
     "choose_course_prompt": "Please choose your course:",
 
-    "main_balance_text": (
+    "main_wallet_text": (
         "🏫 Course: {course_name}\n"
         "👤 {name}\n\n"
-        "<b>🪙 Total: {total:.2f}</b>\n\n"
-        "💳 Balance: {balance}\n"
+        "<b>🪙 Total: {total_balance:.2f}</b>\n\n"
+        "💳 Wallet: {wallet}\n"
         "💹 Savings: {savings} (rate: {savings_rate}% weekly)\n"
         "💸 Loans: {loan} (rate: {loan_rate}% weekly)\n"
     ),  # Overview of participant balances
@@ -187,7 +187,7 @@ LEXICON = {
                          "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
     "withdraw_declined": "❌ Your withdrawal request of {amount} 🪙 has been declined.\n"
                          "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
-    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your balance.\n"
+    "deposit_approved": "✅ Your deposit of {amount} 🪙 has been approved and added to your wallet.\n"
                         "<code>{course_name}, {name}, tx_id: {tx_id}</code>",
     "deposit_declined": "❌ Your deposit request of {amount} 🪙 has been declined.\n"
                         "<code>{course_name}, {name}, tx_id: {tx_id}</code>",

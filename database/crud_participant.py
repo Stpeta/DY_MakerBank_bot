@@ -56,21 +56,17 @@ async def register_participant(
     return participant
 
 
-async def adjust_participant_balance(
+async def adjust_wallet_balance(
         session: AsyncSession,
         participant: Participant,
         delta: float | Decimal
 ) -> Participant:
-    """
-    Adjust main wallet balance by the given delta (can be fractional).
-    Rounds to 2 decimals.
-    """
-    # Ensure Decimal
+    """Adjust wallet balance by the given delta rounded to 2 decimals."""
     change = Decimal(delta)
-    new_balance = (participant.balance + change).quantize(
+    new_balance = (participant.wallet_balance + change).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
-    participant.balance = new_balance
+    participant.wallet_balance = new_balance
     await session.commit()
     await session.refresh(participant)
     return participant

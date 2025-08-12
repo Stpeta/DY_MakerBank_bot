@@ -20,8 +20,7 @@ async def build_participant_menu(
         if not participant:
             text = "Participant not found or not registered."
             return text, InlineKeyboardMarkup()
-
-        balance = participant.balance
+        wallet = participant.wallet_balance
         savings = participant.savings_balance
         loan = participant.loan_balance
         savings_rate = await get_current_rate(session, participant.course_id, "savings")
@@ -30,7 +29,7 @@ async def build_participant_menu(
     text = render_participant_info(
         participant_name,
         course_name,
-        balance,
+        wallet,
         savings,
         loan,
         savings_rate,

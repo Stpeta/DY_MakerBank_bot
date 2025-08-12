@@ -26,7 +26,7 @@ def render_course_info(course, stats: dict, savings_rate: float, loan_rate: floa
         sheet_url=course.sheet_url or "-",
         total=stats["total"],
         registered=stats["registered"],
-        avg_balance=stats["avg_balance"],
+        avg_wallet_balance=stats["avg_wallet_balance"],
         savings_rate=savings_rate,
         loan_rate=loan_rate,
         max_loan=course.max_loan_amount,
@@ -39,22 +39,22 @@ def render_course_info(course, stats: dict, savings_rate: float, loan_rate: floa
 def render_participant_info(
     name: str,
     course_name: str,
-    balance,
+    wallet,
     savings,
     loan,
     savings_rate: float,
     loan_rate: float,
 ) -> str:
-    """Compose a text snippet with the participant's balances."""
-    return LEXICON["main_balance_text"].format(
+    """Compose a text snippet with the participant's wallet, savings and loan balances."""
+    return LEXICON["main_wallet_text"].format(
         name=name,
         course_name=course_name,
-        balance=balance,
+        wallet=wallet,
         savings=savings,
         loan=loan,
         savings_rate=savings_rate,
         loan_rate=loan_rate,
-        total=balance + savings - loan,
+        total_balance=wallet + savings - loan,
     )
 
 def render_admin_menu(active: int, finished: int) -> str:

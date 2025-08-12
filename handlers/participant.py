@@ -282,7 +282,7 @@ async def ask_to_savings(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_deposit_amount))
 async def process_to_savings(message: Message, state: FSMContext):
-    """Move funds from main balance to savings."""
+    """Move funds from wallet to savings."""
     text = message.text.strip()
     try:
         amount = Decimal(text)
@@ -334,7 +334,7 @@ async def ask_from_savings(callback: CallbackQuery, state: FSMContext):
 
 @participant_router.message(StateFilter(CashOperations.waiting_for_savings_withdraw_amount))
 async def process_from_savings(message: Message, state: FSMContext):
-    """Withdraw funds from savings back to main balance."""
+    """Withdraw funds from savings back to wallet."""
     text = message.text.strip()
     try:
         amount = Decimal(text)

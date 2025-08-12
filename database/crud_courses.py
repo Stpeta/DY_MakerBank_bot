@@ -86,27 +86,29 @@ async def add_participants(
 
 
 class CourseStats(TypedDict):
+    """Aggregated statistics for a course."""
+
     total: int
     registered: int
-    avg_balance: float
+    avg_wallet_balance: float
 
 
 async def get_course_stats(
         session: AsyncSession,
         course_id: int
 ) -> CourseStats:
-    """Compute stats: total participants, registered count, average balance."""
+    """Compute stats: total participants, registered count, average wallet balance."""
     stmt = select(
         func.count(Participant.id),
         func.sum(case((Participant.is_registered, 1), else_=0)),
-        func.avg(Participant.balance)
+        func.avg(Participant.wallet_balance)
     ).where(Participant.course_id == course_id)
 
-    total, registered, avg_balance = (await session.execute(stmt)).one()
+    total, registered, avg_wallet_balance = (await session.execute(stmt)).one()
     return CourseStats(
         total=total,
         registered=registered,
-        avg_balance=float(avg_balance or 0.0)
+        avg_wallet_balance=float(avg_wallet_balance or 0.0)
     )
 
 

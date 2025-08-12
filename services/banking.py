@@ -8,7 +8,7 @@ from sqlalchemy import select
 from database.base import AsyncSessionLocal
 from database.crud_transactions import create_transaction, update_transaction_status
 from database.crud_participant import (
-    adjust_participant_balance,
+    adjust_wallet_balance,
     adjust_savings_balance,
     adjust_loan_balance,
 )
@@ -31,11 +31,11 @@ async def create_withdrawal_request(
 ) -> int:
     """Create a pending withdrawal transaction and return its ID."""
     async with AsyncSessionLocal() as session:
-        # Fetch participant and check balance
+        # Fetch participant and check wallet balance
         participant = await session.get(Participant, participant_id)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
-        if amount > participant.balance:
+        if amount > participant.wallet_balance:
             raise ValueError(LEXICON["insufficient_funds"])
 
         # Create pending transaction
@@ -96,16 +96,16 @@ async def cancel_transaction(
 # region --- Savings and Loans ---
 
 async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
-    """Transfer amount from main balance to savings immediately."""
+    """Transfer amount from wallet to savings immediately."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
-        if amount > participant.balance:
+        if amount > participant.wallet_balance:
             raise ValueError(LEXICON["insufficient_funds"])
 
-        await adjust_participant_balance(session, participant, -amount)
+        await adjust_wallet_balance(session, participant, -amount)
         await adjust_savings_balance(session, participant, amount)
         await create_transaction(
             session,
@@ -117,7 +117,7 @@ async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
 
 
 async def withdraw_from_savings(participant_id: int, amount: Decimal | float) -> None:
-    """Move funds from savings back to main balance respecting lock period."""
+    """Move funds from savings back to wallet respecting lock period."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         course = await session.get(Course, participant.course_id)
@@ -132,7 +132,7 @@ async def withdraw_from_savings(participant_id: int, amount: Decimal | float) ->
             raise ValueError(LEXICON["savings_locked_until"].format(unlock_time=unlock_time))
 
         await adjust_savings_balance(session, participant, -amount)
-        await adjust_participant_balance(session, participant, amount)
+        await adjust_wallet_balance(session, participant, amount)
         await create_transaction(
             session,
             participant_id=participant_id,
@@ -143,7 +143,7 @@ async def withdraw_from_savings(participant_id: int, amount: Decimal | float) ->
 
 
 async def take_loan(participant_id: int, amount: Decimal | float) -> None:
-    """Issue a loan to participant up to course limit."""
+    """Issue a loan to a participant up to course limit and add to wallet."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         course = await session.get(Course, participant.course_id)
@@ -156,7 +156,7 @@ async def take_loan(participant_id: int, amount: Decimal | float) -> None:
             )
 
         await adjust_loan_balance(session, participant, amount)
-        await adjust_participant_balance(session, participant, amount)
+        await adjust_wallet_balance(session, participant, amount)
         await create_transaction(
             session,
             participant_id=participant_id,
@@ -167,18 +167,18 @@ async def take_loan(participant_id: int, amount: Decimal | float) -> None:
 
 
 async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
-    """Repay part of the loan from main balance."""
+    """Repay part of the loan from wallet."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
-        if amount > participant.balance:
+        if amount > participant.wallet_balance:
             raise ValueError(LEXICON["insufficient_funds"])
         if amount > participant.loan_balance:
             raise ValueError(LEXICON["loan_repay_exceeds_loan_balance"])
 
-        await adjust_participant_balance(session, participant, -amount)
+        await adjust_wallet_balance(session, participant, -amount)
         await adjust_loan_balance(session, participant, -amount)
         await create_transaction(
             session,

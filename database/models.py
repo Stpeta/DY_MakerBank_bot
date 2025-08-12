@@ -34,6 +34,7 @@ class Course(Base):
 
 class Participant(Base):
     __tablename__ = "participants"
+    """Database model representing a course participant."""
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
@@ -43,12 +44,12 @@ class Participant(Base):
     telegram_id = Column(BigInteger, nullable=True)
     is_registered = Column(Boolean, default=False)
 
-    # Balances support 2 decimal places, up to 6 digits before the point
-    balance = Column(Numeric(8, 2), default=0)
+    # Account balances support 2 decimal places, up to 6 digits before the point
+    wallet_balance = Column(Numeric(8, 2), default=0)
     savings_balance = Column(Numeric(8, 2), default=0)
     loan_balance = Column(Numeric(8, 2), default=0)
 
-    # timestamp of last deposit to savings to enforce withdrawal delay
+    # Timestamp of last deposit to savings to enforce withdrawal delay
     last_savings_deposit_at = Column(DateTime, nullable=True)
 
     course = relationship("Course", back_populates="participants")
