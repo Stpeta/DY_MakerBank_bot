@@ -67,6 +67,16 @@ async def process_registration_code(message: Message, state: FSMContext):
         await state.clear()
         return
 
+    if status == "finished":
+        await message.answer(
+            LEXICON["registration_course_finished"].format(
+                name=part.course.name
+            ),
+            parse_mode="HTML",
+        )
+        await state.clear()
+        return
+
     # Successfully registered
     await message.answer(
         LEXICON["registration_success"].format(name=part.name),

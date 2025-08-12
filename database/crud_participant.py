@@ -38,7 +38,9 @@ async def get_participant_by_code(
 ) -> Participant | None:
     """Fetch a participant by their registration code."""
     result = await session.execute(
-        select(Participant).where(Participant.registration_code == code)
+        select(Participant)
+        .options(selectinload(Participant.course))
+        .where(Participant.registration_code == code)
     )
     return result.scalar_one_or_none()
 
