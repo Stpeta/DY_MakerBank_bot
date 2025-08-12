@@ -15,7 +15,7 @@ LEXICON = {
     "course_description_request": "Enter the description of the course:",  # Ask admin for course description
     "course_savings_rate_request": "Enter weekly savings interest rate (%)",
     "course_loan_rate_request": "Enter weekly loan interest rate (%)",
-    "course_rate_invalid": "Please enter a valid percentage.",
+    "course_rate_invalid": 'Please enter a valid positive percentage (example: 15.5).',
     "course_max_loan_request": "Enter maximum loan amount:",
     "course_savings_lock_request": "Enter savings lock period (days):",
     "course_interest_day_request": "Enter interest payout weekday (0=Monday ... 6=Sunday):",

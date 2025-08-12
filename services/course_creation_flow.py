@@ -39,6 +39,9 @@ async def process_savings_rate(message: types.Message, state: FSMContext) -> Non
     except ValueError:
         await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
         return
+    if rate < 0:
+        await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
+        return
     await state.update_data(savings_rate=rate)
     await message.answer(LEXICON["course_loan_rate_request"], parse_mode="HTML")
     await state.set_state(CourseCreation.waiting_for_loan_rate)
@@ -50,6 +53,9 @@ async def process_loan_rate(message: types.Message, state: FSMContext) -> None:
     try:
         rate = float(text)
     except ValueError:
+        await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
+        return
+    if rate < 0:
         await message.answer(LEXICON["course_rate_invalid"], parse_mode="HTML")
         return
     await state.update_data(loan_rate=rate)
