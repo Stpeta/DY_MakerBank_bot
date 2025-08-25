@@ -48,23 +48,39 @@ def fetch_students(sheet_url: str) -> list[dict[str, str]]:
     return sheet.get_all_records()
 
 def write_registration_codes(sheet_url: str, codes: dict[str, str]) -> None:
-    """Write registration codes to column D for each email."""
+    """Write registration codes to column F for each email."""
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         email = row.get(LEXICON["sheet_header_email"], "").strip()
         if email in codes:
-            sheet.update_cell(idx, 4, codes[email])
+            sheet.update_cell(idx, 6, codes[email])
 
-def mark_registered(sheet_url: str, email: str) -> None:
-    """Mark column E ("Registered") as TRUE for the given email."""
+def mark_registered(
+    sheet_url: str,
+    email: str,
+    telegram_id: int | None = None,
+    telegram_nickname: str | None = None,
+) -> None:
+    """Mark a participant as registered and optionally store Telegram data.
+
+    Args:
+        sheet_url: URL or ID of the spreadsheet.
+        email: Participant email address.
+        telegram_id: Telegram user identifier.
+        telegram_nickname: Telegram username.
+    """
     ss_id = _normalize_url(sheet_url)
     sheet = _gs_client.open_by_key(ss_id).sheet1
     records = sheet.get_all_records()
     for idx, row in enumerate(records, start=2):
         if row.get(LEXICON["sheet_header_email"], "").strip().lower() == email.lower():
-            sheet.update_cell(idx, 5, "TRUE")
+            if telegram_id is not None:
+                sheet.update_cell(idx, 4, str(telegram_id))
+            if telegram_nickname is not None:
+                sheet.update_cell(idx, 5, telegram_nickname)
+            sheet.update_cell(idx, 7, "TRUE")
             break
 
 
@@ -78,6 +94,8 @@ def prepare_course_sheet(sheet_url: str) -> None:
         LEXICON["sheet_header_name"],
         LEXICON["sheet_header_email"],
         LEXICON["sheet_header_comment"],
+        LEXICON["sheet_header_tg_id"],
+        LEXICON["sheet_header_tg_nickname"],
         LEXICON["sheet_header_reg_code"],
         LEXICON["sheet_header_registered"],
         LEXICON["sheet_header_total"],
@@ -85,18 +103,18 @@ def prepare_course_sheet(sheet_url: str) -> None:
         LEXICON["sheet_header_savings"],
         LEXICON["sheet_header_loan"],
     ]
-    sheet.update("A1:I1", [headers])
-    set_column_width(sheet, "E:E", 70)
+    sheet.update("A1:K1", [headers])
+    set_column_width(sheet, "G:G", 70)
     rule = DataValidationRule(BooleanCondition("BOOLEAN"), showCustomUi=True)
-    set_data_validation_for_cell_range(sheet, "E2:E", rule)
+    set_data_validation_for_cell_range(sheet, "G2:G", rule)
     sheet.add_protected_range(
-        name="D:I",
+        name="D:K",
         description=LEXICON["sheet_protected_warning"],
         warning_only=True,
     )
     format_cell_ranges(
         sheet,
-        [("D:I", CellFormat(backgroundColor=Color(1, 0.9, 0.9)))],
+        [("D:K", CellFormat(backgroundColor=Color(1, 0.9, 0.9)))],
     )
 
 
@@ -131,7 +149,7 @@ def _write_balances_to_sheet(
     sheet = _gs_client.open_by_key(ss_id).sheet1
     # Header row
     sheet.update(
-        "F1:I1",
+        "H1:K1",
         [[
             LEXICON["sheet_header_total"],
             LEXICON["sheet_header_wallet"],
@@ -143,7 +161,7 @@ def _write_balances_to_sheet(
     for idx, row in enumerate(records, start=2):
         email = row.get(LEXICON["sheet_header_email"], "").strip().lower()
         if email in data:
-            sheet.update(f"F{idx}:I{idx}", [list(data[email])])
+            sheet.update(f"H{idx}:K{idx}", [list(data[email])])
 
 
 async def update_course_balances(course_id: int) -> None:
