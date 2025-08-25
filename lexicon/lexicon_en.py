@@ -142,6 +142,8 @@ LEXICON = {
     "sheet_header_name": "Name",
     "sheet_header_email": "Email",
     "sheet_header_comment": "Comment",
+    "sheet_header_tg_id": "TG ID",
+    "sheet_header_tg_nick": "TG Nickname",
     "sheet_header_reg_code": "RegCode",
     "sheet_header_registered": "Registered",
     "sheet_header_total": "Total",

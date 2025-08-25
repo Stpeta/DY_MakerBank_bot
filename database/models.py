@@ -42,6 +42,7 @@ class Participant(Base):
     email = Column(String, nullable=False)
     registration_code = Column(String(6), unique=True, nullable=False)
     telegram_id = Column(BigInteger, nullable=True)
+    telegram_username = Column(String, nullable=True)
     is_registered = Column(Boolean, default=False)
 
     # Account balances support 2 decimal places, up to 6 digits before the point

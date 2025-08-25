@@ -6,7 +6,12 @@ from database.crud_courses import create_course, add_participants, set_rate
 from services.utils import gen_registration_code
 from database.base import AsyncSessionLocal
 from database.models import Course, Participant
-from services.google_sheets import fetch_students, write_registration_codes, mark_registered
+from services.google_sheets import (
+    fetch_students,
+    write_registration_codes,
+    mark_registered,
+    write_telegram_data,
+)
 from services.email_service import send_registration_code
 from lexicon.lexicon_en import LEXICON
 
@@ -61,12 +66,17 @@ async def sync_course_participants(course_id: int) -> int:
         rows = fetch_students(course.sheet_url)
 
         result = await session.execute(
-            select(Participant.email, Participant.registration_code, Participant.is_registered)
-            .where(Participant.course_id == course_id)
+            select(
+                Participant.email,
+                Participant.registration_code,
+                Participant.is_registered,
+                Participant.telegram_id,
+                Participant.telegram_username,
+            ).where(Participant.course_id == course_id)
         )
         existing = {
-            email.lower(): (code, is_registered)
-            for email, code, is_registered in result
+            email.lower(): (code, is_registered, telegram_id, telegram_username)
+            for email, code, is_registered, telegram_id, telegram_username in result
         }
         existing_codes = {data[0] for data in existing.values()}
 
@@ -90,11 +100,16 @@ async def sync_course_participants(course_id: int) -> int:
         if new_participants:
             await add_participants(session, course_id, new_participants)
 
-        registered_emails = {
-            email for email, data in existing.items() if data[1]
+        registered_emails = {email for email, data in existing.items() if data[1]}
+
+        tg_map = {
+            email: (data[2], data[3])
+            for email, data in existing.items()
+            if data[2] is not None or data[3]
         }
 
     write_registration_codes(course.sheet_url, codes_map)
+    write_telegram_data(course.sheet_url, tg_map)
     for email in registered_emails:
         mark_registered(course.sheet_url, email)
     return len(codes_map)

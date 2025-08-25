@@ -48,10 +48,22 @@ async def get_participant_by_code(
 async def register_participant(
         session: AsyncSession,
         participant: Participant,
-        telegram_id: int
+        telegram_id: int,
+        telegram_username: str | None,
 ) -> Participant:
-    """Set Telegram ID and mark participant as registered."""
+    """Store Telegram credentials and mark a participant as registered.
+
+    Args:
+        session: Database session for persistence.
+        participant: Participant instance to update.
+        telegram_id: Telegram identifier of the user.
+        telegram_username: Telegram username of the user.
+
+    Returns:
+        Participant: Updated participant entity.
+    """
     participant.telegram_id = telegram_id
+    participant.telegram_username = telegram_username
     participant.is_registered = True
     await session.commit()
     await session.refresh(participant)

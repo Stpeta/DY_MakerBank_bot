@@ -44,7 +44,11 @@ async def process_registration_code(message: Message, state: FSMContext):
     code = message.text.strip().upper()
 
     try:
-        part, status = await register_by_code(code, message.from_user.id)
+        part, status = await register_by_code(
+            code,
+            message.from_user.id,
+            message.from_user.username,
+        )
     except Exception as e:
         print(f"[REGISTRATION ERROR] code={code}, err={e}")
         await message.answer(
