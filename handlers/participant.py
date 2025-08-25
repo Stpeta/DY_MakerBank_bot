@@ -9,7 +9,7 @@ from aiogram.types import Message, CallbackQuery
 
 from database.base import AsyncSessionLocal
 from database.crud_participant import get_participants_by_telegram_id
-from database.models import Participant, Course
+from database.models import Course
 from filters.role_filter import RoleFilter
 from keyboards.admin import tx_approval_kb
 from keyboards.participant import (
