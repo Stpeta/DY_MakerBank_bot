@@ -292,6 +292,12 @@ async def process_to_savings(message: Message, state: FSMContext):
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+    if amount.is_nan():
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
     amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amount <= 0:
         return await message.answer(
@@ -339,6 +345,12 @@ async def process_from_savings(message: Message, state: FSMContext):
     try:
         amount = Decimal(text)
     except (InvalidOperation, ValueError):
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    if amount.is_nan():
         return await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",
@@ -399,6 +411,12 @@ async def process_take_loan(message: Message, state: FSMContext):
             parse_mode="HTML",
             reply_markup=cancel_operation_kb(),
         )
+    if amount.is_nan():
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
     amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amount <= 0:
         return await message.answer(
@@ -446,6 +464,12 @@ async def process_repay_loan(message: Message, state: FSMContext):
     try:
         amount = Decimal(text)
     except (InvalidOperation, ValueError):
+        return await message.answer(
+            LEXICON["invalid_amount"],
+            parse_mode="HTML",
+            reply_markup=cancel_operation_kb(),
+        )
+    if amount.is_nan():
         return await message.answer(
             LEXICON["invalid_amount"],
             parse_mode="HTML",

@@ -99,7 +99,10 @@ async def move_to_savings(participant_id: int, amount: Decimal | float) -> None:
     """Transfer amount from wallet to savings immediately."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
-        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        amount = Decimal(amount)
+        if amount.is_nan():
+            raise ValueError(LEXICON["invalid_amount"])
+        amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.wallet_balance:
@@ -121,7 +124,10 @@ async def withdraw_from_savings(participant_id: int, amount: Decimal | float) ->
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         course = await session.get(Course, participant.course_id)
-        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        amount = Decimal(amount)
+        if amount.is_nan():
+            raise ValueError(LEXICON["invalid_amount"])
+        amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.savings_balance:
@@ -147,7 +153,10 @@ async def take_loan(participant_id: int, amount: Decimal | float) -> None:
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
         course = await session.get(Course, participant.course_id)
-        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        amount = Decimal(amount)
+        if amount.is_nan():
+            raise ValueError(LEXICON["invalid_amount"])
+        amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if participant.loan_balance + amount > course.max_loan_amount:
@@ -170,7 +179,10 @@ async def repay_loan(participant_id: int, amount: Decimal | float) -> None:
     """Repay part of the loan from wallet."""
     async with AsyncSessionLocal() as session:
         participant = await session.get(Participant, participant_id)
-        amount = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        amount = Decimal(amount)
+        if amount.is_nan():
+            raise ValueError(LEXICON["invalid_amount"])
+        amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             raise ValueError(LEXICON["invalid_amount"])
         if amount > participant.wallet_balance:
