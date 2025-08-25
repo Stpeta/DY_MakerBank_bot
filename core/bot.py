@@ -3,6 +3,7 @@ from aiogram import Bot, Dispatcher
 from config_data import config
 from handlers import register_handlers
 from keyboards.main_menu import get_main_menu_commands
+from middlewares.logging_middleware import LoggingMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ def create_bot() -> Bot:
 def create_dispatcher() -> Dispatcher:
     """Create dispatcher and register all handlers."""
     dp = Dispatcher()
+    dp.update.outer_middleware(LoggingMiddleware())
     register_handlers(dp)
     return dp
 
