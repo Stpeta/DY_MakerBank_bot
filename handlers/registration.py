@@ -6,6 +6,7 @@ from aiogram.types import Message
 from filters.role_filter import RoleFilter
 from lexicon.lexicon_en import LEXICON
 from services.participant_registration import register_by_code
+from services.google_sheets import mark_registered
 from states.fsm import Registration
 
 # Router for registration flows
@@ -78,6 +79,12 @@ async def process_registration_code(message: Message, state: FSMContext):
         return
 
     # Successfully registered
+    mark_registered(
+        part.course.sheet_url,
+        part.email,
+        message.from_user.id,
+        message.from_user.username,
+    )
     await message.answer(
         LEXICON["registration_success"].format(name=part.name),
         parse_mode="HTML",
